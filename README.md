@@ -11,6 +11,11 @@ Este repositório publica o app de leilões como site e o atualiza sozinho todo 
 
 Se uma fonte falhar num dia, o site continua com a última coleta boa daquela fonte. O topo da página mostra, para cada fonte, se os dados são de hoje ou de qual dia. Na primeira execução, as coletas de 14/10/2026 em `brutos-iniciais/` servem de ponto de partida.
 
+## Fontes automáticas e manuais
+
+- **Zuk e Mega Leilões:** coletadas automaticamente todo dia.
+- **Caixa e Leilão Imóvel (bancos e leiloeiras):** os dois sites bloqueiam acesso automático vindo de servidores (Caixa com CAPTCHA da Radware, Leilão Imóvel com desafio da Cloudflare). Não contornamos esses bloqueios. Essas fontes são atualizadas por coleta manual, feita pelo navegador do app do Claude, que grava o arquivo em `manuais/` e a data em `manuais/datas.json`. Na execução seguinte, o site passa a usar essa coleta.
+
 ## Instalação (uma vez, uns 10 minutos)
 
 1. Crie uma conta em github.com, se ainda não tiver.

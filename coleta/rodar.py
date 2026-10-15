@@ -35,6 +35,10 @@ FONTES = {
     "mega": ("mega.json", fontes.mega, 200, "Mega Leilões"),
     "agregador": ("agregador.json", fontes.agregador, 3000, "Leilão Imóvel"),
 }
+# Caixa (Radware) e Leilão Imóvel (Cloudflare) bloqueiam acesso automático a partir de servidores.
+# Não tentamos contornar: essas duas entram por coleta manual, gravada em manuais/ (ver README).
+MANUAIS = {"caixa", "agregador"}
+MANUAIS_DIR = os.path.join(RAIZ, "manuais")
 
 
 def agora_ms():
@@ -93,6 +97,19 @@ def main():
         st["nome"] = nome
         if garantir_inicial(arquivo) and "data" not in st:
             st.update(data="2026-10-14", ok=False, msg="usando a coleta inicial de 14/10/2026")
+        # coleta manual mais nova que a que está em uso?
+        datas = os.path.join(MANUAIS_DIR, "datas.json")
+        man = os.path.join(MANUAIS_DIR, arquivo + ".gz")
+        if os.path.exists(man) and os.path.exists(datas):
+            dman = json.load(open(datas)).get(chave)
+            if dman and dman > st.get("data", ""):
+                with gzip.open(man, "rb") as f, open(os.path.join(BRUTOS, arquivo), "wb") as g:
+                    shutil.copyfileobj(f, g)
+                st.update(data=dman, ok=True, msg="coleta manual")
+        if chave in MANUAIS:
+            if st.get("msg") != "coleta manual" or st.get("data") != hoje.isoformat():
+                st.update(ok=st.get("data") == hoje.isoformat(), msg="atualização manual; dados de " + st.get("data", "?"))
+            continue
         if a.sem_coleta or chave not in escolhidas:
             continue
         fontes.log("== coletando", nome)
