@@ -40,7 +40,13 @@ jobs:
 
       - name: Teste rápido das fontes
         if: ${{ github.event.inputs.modo == 'teste' }}
-        run: python coleta/rodar.py --teste
+        run: |
+          python coleta/rodar.py --teste 2>&1 | tee teste-fontes.txt
+          git config user.name "atualizador"
+          git config user.email "atualizador@users.noreply.github.com"
+          git add teste-fontes.txt
+          git commit -m "Resultado do teste das fontes" || true
+          git push || true
 
       # guarda a última coleta boa de cada fonte entre uma execução e outra
       - name: Recuperar coletas anteriores
