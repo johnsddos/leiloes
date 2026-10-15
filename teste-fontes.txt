@@ -1,0 +1,25 @@
+19:16:48 Caixa por UF: {'MS': 0, 'AC': 0}
+19:16:48 TESTE caixa VAZIO 0 registros []
+19:16:54 Zuk: 60
+19:16:54 TESTE zuk OK 60 registros [{"url": "https://www.portalzuk.com.br/imovel/sp/araraquara/jardim-das-estacoes-(vila-xavier)/rua-edgard-pinto-machado-290/37691-235605", "foto": "https://imagens.portalzuk.com.br/mini/2026/09/7ceceff7b2aa4209b00c68f19eaedb8b.jpg", "tipo": "Casa", "loc": "Araraquara / SP - Jardim das Estações (Vila 
+19:16:58 Mega: 96
+19:16:58 TESTE mega OK 96 registros [{"url": "https://www.megaleiloes.com.br/imoveis/terrenos-e-lotes/sp/sorocaba/direitos-sobre-terreno-com-145-m2-jardim-humberto-de-campos-sorocaba-sp-j128075", "foto": "https://cdn1.megaleiloes.com.br/batches/128075/632be4566958c28933b0be90a8d7baaf_320x240.jpg", "tit": "Direitos sobre Terreno com 14
+19:16:58 HTTP 403 https://www.leilaoimovel.com.br/
+19:16:59 HTTP 403 https://www.leilaoimovel.com.br/leilao-de-imoveis?venda=4
+19:16:59 HTTP 403 https://www.leilaoimovel.com.br/leilao-de-imoveis?venda=5
+19:16:59 HTTP 403 https://www.leilaoimovel.com.br/leilao-de-imoveis?venda=3
+19:17:00 HTTP 403 https://www.leilaoimovel.com.br/leilao-de-imoveis?venda=8
+19:17:00 HTTP 403 https://www.leilaoimovel.com.br/leilao-de-imoveis?venda=12
+19:17:00 HTTP 403 https://www.leilaoimovel.com.br/leilao-de-imoveis?banco=2
+19:17:01 HTTP 403 https://www.leilaoimovel.com.br/leilao-de-imoveis?banco=4
+19:17:01 HTTP 403 https://www.leilaoimovel.com.br/leilao-de-imoveis?banco=21
+19:17:01 HTTP 403 https://www.leilaoimovel.com.br/leilao-de-imoveis?banco=3
+19:17:02 HTTP 403 https://www.leilaoimovel.com.br/leilao-de-imoveis?banco=6
+19:17:02 HTTP 403 https://www.leilaoimovel.com.br/leilao-de-imoveis?banco=38
+19:17:03 HTTP 403 https://www.leilaoimovel.com.br/leilao-de-imoveis?banco=8
+19:17:04 HTTP 403 https://www.leilaoimovel.com.br/leilao-de-imoveis?banco=19
+19:17:04 HTTP 403 https://www.leilaoimovel.com.br/leilao-de-imoveis?banco=53
+19:17:04 HTTP 403 https://www.leilaoimovel.com.br/leilao-de-imoveis?banco=55
+19:17:05 HTTP 403 https://www.leilaoimovel.com.br/leilao-de-imoveis?banco=54
+19:17:05 Leilão Imóvel: 0 cards, 0 únicos, falhas 16
+19:17:05 TESTE agregador VAZIO 0 registros []
