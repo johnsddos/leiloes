@@ -1,0 +1,4 @@
+brutos/
+site/dados/
+__pycache__/
+*.tmp

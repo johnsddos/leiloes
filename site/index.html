@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Imóveis de leilão, licitação e venda direta de todo o Brasil, atualizados diariamente.">
+</head>
+<body>
+<title>Painel de Leilões de Imóveis</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: barra do app com abas (Busca, Destaques, Favoritos, imóveis abertos) → conteúdo da aba */
+:root {
+  color-scheme: light;
+  --bg: #f5f6f8; --surface: #ffffff; --surface-2: #f9fafb; --surface-3: #f1f4f8;
+  --text: #1b2028; --text-dim: #586271; --text-faint: #8a93a0;
+  --border: #e3e7ec; --border-2: #cfd6de; --border-soft: #eef1f4;
+  --link: #0b66c3; --link-hover: #0a59ac; --link-soft: #e6f0fb;
+  --ok-bg: #e3f6e8; --ok-fg: #1a7f37; --bad-bg: #fde8e8; --bad-fg: #b3261e;
+  --warn-bg: #fff4e0; --warn-fg: #9a6700; --info-bg: #e7f0fb; --info-fg: #0b5aa8;
+  --neutral-bg: #eef0f3; --star: #d99a00; --bar: #ffffff;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #14171b; --surface: #1c2025; --surface-2: #21262c; --surface-3: #262c33;
+    --text: #e7eaee; --text-dim: #a3adb9; --text-faint: #76808c;
+    --border: #2d333a; --border-2: #3b424b; --border-soft: #262b31;
+    --link: #6cb2f5; --link-hover: #8fc6ff; --link-soft: #17283b;
+    --ok-bg: #16301f; --ok-fg: #5fd083; --bad-bg: #38191a; --bad-fg: #ff8d84;
+    --warn-bg: #352b12; --warn-fg: #e8bd5c; --info-bg: #15283d; --info-fg: #7cbcff;
+    --neutral-bg: #2a3037; --star: #f2c14e; --bar: #1a1e23;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #14171b; --surface: #1c2025; --surface-2: #21262c; --surface-3: #262c33;
+  --text: #e7eaee; --text-dim: #a3adb9; --text-faint: #76808c;
+  --border: #2d333a; --border-2: #3b424b; --border-soft: #262b31;
+  --link: #6cb2f5; --link-hover: #8fc6ff; --link-soft: #17283b;
+  --ok-bg: #16301f; --ok-fg: #5fd083; --bad-bg: #38191a; --bad-fg: #ff8d84;
+  --warn-bg: #352b12; --warn-fg: #e8bd5c; --info-bg: #15283d; --info-fg: #7cbcff;
+  --neutral-bg: #2a3037; --star: #f2c14e; --bar: #1a1e23;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; line-height: 1.45; }
+a { color: var(--link); }
+button { font-family: inherit; }
+:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+.inner { max-width: 1440px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* barra do app */
+.appbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bar); border-bottom: 1px solid var(--border); }
+.appbar .inner { display: flex; align-items: center; gap: 10px; padding-block: 8px 0; }
+.brand { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; padding-bottom: 8px; white-space: nowrap; }
+.brand svg { width: 22px; height: 22px; }
+.apptabs { display: flex; gap: 2px; overflow-x: auto; flex: 1 1 300px; min-width: 0; scrollbar-width: thin; }
+.atab { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px 9px; border: 1px solid transparent; border-bottom: 0; border-radius: 8px 8px 0 0;
+  background: transparent; color: var(--text-dim); font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; max-width: 240px; }
+.atab:hover { background: var(--surface-3); }
+.atab[aria-selected="true"] { background: var(--bg); border-color: var(--border); color: var(--text); margin-bottom: -1px; }
+.atab .lbl { overflow: hidden; text-overflow: ellipsis; }
+.atab .x { border: 0; background: transparent; color: var(--text-faint); cursor: pointer; padding: 0 2px; font-size: 15px; line-height: 1; }
+.atab .x:hover { color: var(--bad-fg); }
+.atab .cnt { font-weight: 500; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.atab.imv { font-weight: 500; }
+.bar-btns { display: flex; gap: 6px; padding-bottom: 8px; }
+
+main .inner { padding-block: 18px 60px; }
+.view[hidden] { display: none !important; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  text-decoration: none; background: var(--link); color: #fff; border: 1px solid var(--link); white-space: nowrap; cursor: pointer; }
+.btn:hover { background: var(--link-hover); border-color: var(--link-hover); }
+.btn.alt { background: var(--surface); color: var(--link); }
+.btn.alt:hover { background: var(--surface-3); }
+.btn.sm { padding: 6px 10px; font-size: 12px; }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.fav[aria-pressed="true"] { color: var(--star); border-color: var(--star); }
+
+.head h1 { font-size: 21px; margin: 0 0 4px; text-wrap: balance; }
+.sub { color: var(--text-dim); font-size: 13px; margin: 0 0 14px; max-width: 980px; }
+.sub b { color: var(--text); }
+.st-line { margin-top: -8px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.banner { border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; font-size: 13px; border: 1px solid var(--warn-fg); background: var(--warn-bg); color: var(--warn-fg); }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.card .n { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.card .l { font-size: 12px; color: var(--text-dim); }
+
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }
+.panel-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.panel-h h2 { font-size: 12px; margin: 0; text-transform: uppercase; letter-spacing: .05em; color: var(--text-dim); }
+.panel-h .hint { font-size: 12px; color: var(--text-faint); }
+
+.ufgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 6px; }
+.uf { border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; background: var(--surface-2); cursor: pointer; text-align: left;
+  color: var(--text); display: flex; flex-direction: column; gap: 2px; position: relative; overflow: hidden; font-size: 13px; }
+.uf:hover { border-color: var(--border-2); }
+.uf[aria-pressed="true"] { border-color: var(--link); background: var(--link-soft); }
+.uf span { font-size: 11px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.uf i { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--link); opacity: .55; }
+.uf:disabled { opacity: .4; cursor: default; }
+
+.filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.fld { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.fld > span { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .03em; }
+.fld.wide { grid-column: span 2; }
+input, select { padding: 8px 10px; border: 1px solid var(--border-2); border-radius: 8px; font-size: 13px; background: var(--surface); color: var(--text); font-family: inherit; width: 100%; min-width: 0; }
+.pair { display: flex; gap: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chip { border: 1px solid var(--border-2); background: var(--surface); color: var(--text-dim); border-radius: 999px; padding: 5px 10px; font-size: 12px; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--link); border-color: var(--link); color: #fff; }
+.chip .c { opacity: .75; font-variant-numeric: tabular-nums; }
+.chk { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-dim); cursor: pointer; }
+.chk input { width: 15px; height: 15px; margin: 0; }
+details.custos summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--link); }
+.custos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-top: 12px; }
+
+.resbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.resbar .info { font-size: 13px; color: var(--text-dim); }
+.resbar .info b { color: var(--text); font-variant-numeric: tabular-nums; }
+.resbar select { width: auto; }
+
+.tbl-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+table { width: 100%; border-collapse: collapse; min-width: 1060px; }
+thead th { text-align: left; font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .04em; padding: 10px 12px; background: var(--surface-2); border-bottom: 1px solid var(--border); white-space: nowrap; }
+tbody td { padding: 10px 12px; border-bottom: 1px solid var(--border-soft); vertical-align: top; }
+tbody tr.row { cursor: pointer; }
+tbody tr.row:hover { background: var(--surface-3); }
+td.imv { min-width: 330px; }
+.thumb-wrap { display: flex; gap: 10px; align-items: flex-start; }
+.thumb { width: 84px; height: 63px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); background: var(--neutral-bg); display: block; flex: 0 0 auto; }
+.no-photo { width: 84px; height: 63px; border-radius: 6px; border: 1px dashed var(--border-2); background: var(--surface-2); flex: 0 0 auto; display: flex; align-items: center; justify-content: center; color: var(--text-faint); font-size: 10px; text-align: center; }
+.t1 { font-weight: 600; }
+.t2 { color: var(--text-dim); font-size: 12px; }
+.t3 { color: var(--text-faint); font-size: 11px; }
+.money { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.sm { font-size: 11px; color: var(--text-faint); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.sm.strong { color: var(--text-dim); font-weight: 600; }
+.disc { font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; }
+.d-hi { color: var(--ok-fg); } .d-mid { color: var(--warn-fg); } .d-lo { color: var(--text-dim); } .d-neg { color: var(--bad-fg); }
+.pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.p-ok { background: var(--ok-bg); color: var(--ok-fg); } .p-bad { background: var(--bad-bg); color: var(--bad-fg); }
+.p-warn { background: var(--warn-bg); color: var(--warn-fg); } .p-info { background: var(--info-bg); color: var(--info-fg); }
+.p-n { background: var(--neutral-bg); color: var(--text-dim); }
+.pills { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.nota { font-size: 12px; color: var(--text-dim); max-width: 360px; margin-top: 4px; }
+.conf { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; font-weight: 700; }
+.c-alta { color: var(--ok-fg); } .c-média { color: var(--warn-fg); } .c-baixa { color: var(--bad-fg); }
+.star { color: var(--star); }
+.openbtn { border: 1px solid var(--border-2); background: var(--surface); color: var(--link); border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.openbtn:hover { background: var(--link-soft); }
+.empty { padding: 28px 16px; text-align: center; color: var(--text-dim); }
+.pager { display: flex; gap: 8px; align-items: center; justify-content: center; margin-top: 12px; flex-wrap: wrap; font-size: 13px; color: var(--text-dim); }
+.note { font-size: 12px; color: var(--text-dim); margin-top: 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.note b { color: var(--text); }
+.note ul { margin: 6px 0 0; padding-left: 18px; }
+
+/* ficha do imóvel */
+.crumbs { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.crumbs button { border: 0; background: none; color: var(--link); cursor: pointer; padding: 0; font-size: 12px; }
+.ficha-top { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+.ficha-top > div:first-child { min-width: 0; flex: 1 1 420px; }
+.ficha-top h1 { font-size: 22px; margin: 0 0 4px; text-wrap: balance; }
+.ficha-acts { display: flex; gap: 6px; flex-wrap: wrap; }
+.ficha-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.ficha-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.foto { width: 100%; aspect-ratio: 4 / 3; max-width: 100%; object-fit: cover; border-radius: 10px; border: 1px solid var(--border); background: var(--neutral-bg); display: block; }
+.foto-vazia { width: 100%; aspect-ratio: 4 / 3; border-radius: 10px; border: 1px dashed var(--border-2); background: var(--surface-2); display: flex; align-items: center; justify-content: center; color: var(--text-faint); }
+.preco .big { font-size: 30px; font-weight: 750; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 13px; }
+.kv dt { color: var(--text-dim); }
+.kv dd { margin: 0; font-variant-numeric: tabular-nums; min-width: 0; overflow-wrap: anywhere; }
+.metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 12px 0; }
+.metric { background: var(--surface-2); border: 1px solid var(--border-soft); border-radius: 8px; padding: 8px 10px; }
+.metric .v { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.metric .k { font-size: 11px; color: var(--text-dim); }
+.timeline { display: flex; flex-direction: column; gap: 8px; }
+.praca { display: grid; grid-template-columns: 14px 1fr auto; gap: 10px; align-items: center; font-size: 13px; }
+.praca .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--border-2); background: var(--surface); }
+.praca.atual .dot { border-color: var(--link); background: var(--link); }
+.praca.passou { color: var(--text-faint); }
+.praca.passou .val { text-decoration: line-through; }
+.praca .val { font-weight: 600; font-variant-numeric: tabular-nums; }
+.steps { margin: 0; padding-left: 20px; font-size: 13px; display: flex; flex-direction: column; gap: 6px; }
+.checklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.checklist label { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
+.checklist input { width: 15px; height: 15px; margin-top: 2px; flex: 0 0 auto; }
+.simul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.simul-res { margin-top: 10px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.parecidos { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.mini { border: 1px solid var(--border); border-radius: 10px; background: var(--surface); padding: 8px; cursor: pointer; text-align: left; color: var(--text); display: flex; gap: 8px; min-width: 0; }
+.mini:hover { border-color: var(--link); }
+.mini img, .mini .np { width: 64px; height: 48px; object-fit: cover; border-radius: 6px; flex: 0 0 auto; background: var(--neutral-bg); }
+.mini > div { min-width: 0; }
+.mini .t1 { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.aviso-src { font-size: 12px; color: var(--text-dim); }
+.jur h3 { font-size: 13px; margin: 16px 0 6px; }
+.jur ul { margin: 0; padding-left: 18px; font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
+.drop { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 18px; border: 1.5px dashed var(--border-2); border-radius: 10px; background: var(--surface-2); cursor: pointer; text-align: center; color: var(--link); font-size: 13px; }
+.drop.on, .drop:hover { border-color: var(--link); background: var(--link-soft); }
+ul.jur-docs { list-style: none; padding: 0; margin-top: 8px; }
+.jur-docs li { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.jur-docs .x { border: 0; background: none; color: var(--text-faint); cursor: pointer; font-size: 15px; }
+.jur-colar { margin-top: 8px; font-size: 13px; } .jur-colar summary { cursor: pointer; color: var(--link); }
+.jur textarea { width: 100%; margin-top: 6px; padding: 8px 10px; border: 1px solid var(--border-2); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; font-size: 13px; }
+.jur-off { background: var(--warn-bg); color: var(--warn-fg); border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-bottom: 10px; }
+.jur-out { margin-top: 12px; }
+.jur-load { padding: 16px; border-radius: 8px; background: var(--surface-2); color: var(--text-dim); font-size: 13px; }
+.jur-top { display: flex; gap: 6px; flex-wrap: wrap; }
+.jur-resumo { font-size: 14px; margin: 8px 0 0; }
+.jur-parecer { font-size: 13px; margin: 0; padding: 10px 12px; background: var(--info-bg); color: var(--text); border-radius: 8px; }
+.tbl-mini { overflow-x: auto; } .tbl-mini table { min-width: 520px; font-size: 12px; } .tbl-mini td, .tbl-mini th { padding: 6px 8px; }
+.jur-chat { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 4px; }
+.jur-msgs { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.msg { font-size: 13px; padding: 8px 10px; border-radius: 10px; max-width: 92%; white-space: pre-wrap; }
+.msg.eu { align-self: flex-end; background: var(--link); color: #fff; }
+.msg.ia { align-self: flex-start; background: var(--surface-2); border: 1px solid var(--border-soft); }
+.jur-intro { max-width: 760px; }
+@media (max-width: 860px) { .ficha-grid { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { #theme-btn { font-size: 0; padding: 6px 8px; } #theme-btn::before { content: "◐"; font-size: 14px; } .fld.wide { grid-column: auto; } .card .n { font-size: 19px; } .brand span { display: none; } .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<header class="appbar">
+  <div class="inner">
+    <div class="brand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5" /><path d="M5.5 10v9.5h13V10" /><path d="m14.5 14 4.5 4.5" /><circle cx="12" cy="13.5" r="3" /></svg><span>Leilões de imóveis</span></div>
+    <nav class="apptabs" id="apptabs" role="tablist" aria-label="Abas"></nav>
+    <div class="bar-btns"><button class="btn alt sm" id="theme-btn" type="button" title="Trocar tema">Tema: auto</button></div>
+  </div>
+</header>
+
+<main>
+  <div class="inner">
+    <!-- LISTAS (busca, destaques, favoritos) -->
+    <section class="view" id="v-lista">
+      <div class="head">
+        <h1 id="lista-titulo">Busca de imóveis</h1>
+        <p class="sub" id="sub">Carregando dados…</p>
+      </div>
+      <div class="banner" id="stale" hidden></div>
+      <div class="cards" id="cards"></div>
+
+      <section class="panel" id="p-uf">
+        <div class="panel-h"><h2>Estados</h2><span class="hint">Toque num estado para filtrar; toque de novo para voltar ao Brasil.</span></div>
+        <div class="ufgrid" id="ufgrid"></div>
+      </section>
+
+      <section class="panel" id="p-filtros">
+        <div class="panel-h"><h2>Filtros</h2><span class="hint" id="filtro-resumo"></span></div>
+        <div class="filters">
+          <label class="fld"><span>Cidade</span><select id="f-cid"><option value="">Escolha o estado</option></select></label>
+          <label class="fld"><span>Bairro</span><input id="f-bai" type="text" placeholder="ex.: Centro" list="dl-bai" autocomplete="off"><datalist id="dl-bai"></datalist></label>
+          <label class="fld wide"><span>Busca livre</span><input id="f-q" type="text" placeholder="rua, condomínio, banco, cidade…" autocomplete="off"></label>
+          <label class="fld"><span>Origem</span><select id="f-fonte"></select></label>
+          <label class="fld"><span>Banco / vendedor</span><select id="f-com"></select></label>
+          <label class="fld"><span>Modalidade</span><select id="f-mod"></select></label>
+          <div class="fld"><span>Preço (R$ mil)</span><div class="pair"><input id="f-pmin" type="number" min="0" placeholder="mín"><input id="f-pmax" type="number" min="0" placeholder="máx"></div></div>
+          <label class="fld"><span>Desconto mínimo sobre a avaliação</span><select id="f-desc">
+            <option value="">qualquer</option><option value="20">20% ou mais</option><option value="30">30% ou mais</option>
+            <option value="40">40% ou mais</option><option value="50">50% ou mais</option><option value="60">60% ou mais</option></select></label>
+          <div class="fld"><span>Área (m²)</span><div class="pair"><input id="f-amin" type="number" min="0" placeholder="mín"><input id="f-amax" type="number" min="0" placeholder="máx"></div></div>
+          <label class="fld"><span>Encerramento</span><select id="f-dt">
+            <option value="">qualquer</option><option value="7">nos próximos 7 dias</option><option value="15">nos próximos 15 dias</option>
+            <option value="30">nos próximos 30 dias</option><option value="sem">sem data (venda direta/proposta)</option></select></label>
+        </div>
+        <div style="margin-top:12px" class="fld"><span>Tipo de imóvel</span><div class="chips" id="f-tipo"></div></div>
+        <div class="chips" style="margin-top:12px; justify-content: space-between">
+          <div class="chips">
+            <label class="chk"><input type="checkbox" id="f-fin"> Aceita financiamento</label>
+            <label class="chk"><input type="checkbox" id="f-foto"> Só com foto</label>
+            <label class="chk"><input type="checkbox" id="f-dir" checked> Esconder leilão de direitos</label>
+          </div>
+          <div class="chips">
+            <button class="btn alt sm" id="limpar-btn" type="button">Limpar filtros</button>
+            <button class="btn sm" id="csv-btn" type="button">Exportar CSV</button>
+          </div>
+        </div>
+        <details class="custos" id="custos" style="margin-top:12px">
+          <summary>Premissas do custo total</summary>
+          <div class="custos-grid">
+            <label class="fld"><span>Comissão do leiloeiro (%)</span><input id="p-com" type="number" step="0.5" value="5"></label>
+            <label class="fld"><span>ITBI (%)</span><input id="p-itbi" type="number" step="0.5" value="3"></label>
+            <label class="fld"><span>Registro e escritura (%)</span><input id="p-reg" type="number" step="0.5" value="1.5"></label>
+            <label class="fld"><span>Desocupação se ocupado (R$)</span><input id="p-desoc" type="number" step="1000" value="20000"></label>
+            <label class="fld"><span>Reforma (R$/m²)</span><input id="p-ref" type="number" step="50" value="0"></label>
+          </div>
+          <p class="t3">Usadas nos destaques e no simulador da ficha de cada imóvel. Caixa: comissão costuma ser 0% em venda direta/online e 5% em leilão.</p>
+        </details>
+      </section>
+
+      <div class="resbar">
+        <div class="info" id="res-info"></div>
+        <label class="chk">Ordenar por
+          <select id="sort">
+            <option value="cb">melhor custo-benefício</option>
+            <option value="desc">maior desconto</option>
+            <option value="efet">desconto efetivo (destaques)</option>
+            <option value="preco-asc">menor preço</option>
+            <option value="preco-desc">maior preço</option>
+            <option value="m2-asc">menor R$/m²</option>
+            <option value="data">encerra primeiro</option>
+          </select>
+        </label>
+      </div>
+      <div class="tbl-wrap">
+        <table><thead id="thead"></thead><tbody id="rows"></tbody></table>
+        <div class="empty" id="empty" hidden></div>
+      </div>
+      <div class="pager">
+        <button class="btn alt sm" id="prev" type="button">← Anterior</button>
+        <span id="pageinfo"></span>
+        <button class="btn alt sm" id="next" type="button">Próxima →</button>
+      </div>
+      <div class="note">
+        <b>Como ler.</b>
+        <ul>
+          <li>Toque em qualquer imóvel para abrir a ficha completa numa aba aqui dentro. Você pode deixar várias abertas e comparar.</li>
+          <li><b>Desconto</b> é sobre a avaliação do vendedor, que na Caixa e em leilão judicial costuma ficar acima do mercado.</li>
+          <li><b>Destaques analisados</b> têm o preço do m² do bairro pesquisado em anúncios reais e o desconto efetivo já com custos.</li>
+          <li><b>Melhores ofertas</b> dá uma nota de 0 a 100: quanto o seu custo por m² (lance + comissão + ITBI + registro) fica abaixo da referência do mercado, com pontos a mais para financiamento e imóvel desocupado e a menos para ocupado. A referência é o preço pesquisado no bairro (destaques) ou, nos demais, a mediana do R$/m² de avaliação de imóveis do mesmo tipo na cidade. Entram só imóveis com área informada e nota 40 ou mais (Muito boa ou Excelente).</li>
+          <li>O <b>lance</b> é o menor valor ainda disponível: se a 1ª praça já passou, vale a 2ª.</li>
+          <li>Fontes: lista oficial da Caixa, Zuk, Mega Leilões e Leilão Imóvel (bancos, PGFN e cerca de 80 leiloeiras).</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- FICHA DO IMÓVEL -->
+    <section class="view" id="v-imovel" hidden></section>
+
+    <!-- ASSISTENTE JURÍDICO AVULSO -->
+    <section class="view" id="v-jur" hidden>
+      <div class="head jur-intro">
+        <h1>Assistente jurídico de editais</h1>
+        <p class="sub">Para qualquer edital, inclusive de imóveis que não estão na nossa base. Para um imóvel da lista, use o assistente dentro da ficha dele: a análise já leva os dados do lote e fica salva junto.</p>
+      </div>
+      <section class="panel jur-intro" id="jur-avulso"></section>
+    </section>
+  </div>
+</main>
+
+<script src="dados/status.js"></script>
+<script src="dados/imoveis.js"></script>
+<script src="dados/detalhes.js"></script>
+<script>
+(function () {
+"use strict";
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const fmt = n => n == null || isNaN(n) ? "—" : Math.round(n).toLocaleString("pt-BR");
+const brl = n => n == null || isNaN(n) ? "—" : "R$ " + fmt(n);
+const num1 = n => String(Math.round(n * 100) / 100).replace(".", ",");
+const norm = s => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const UFN = {AC:"Acre",AL:"Alagoas",AP:"Amapá",AM:"Amazonas",BA:"Bahia",CE:"Ceará",DF:"Distrito Federal",ES:"Espírito Santo",GO:"Goiás",MA:"Maranhão",MT:"Mato Grosso",MS:"Mato Grosso do Sul",MG:"Minas Gerais",PA:"Pará",PB:"Paraíba",PR:"Paraná",PE:"Pernambuco",PI:"Piauí",RJ:"Rio de Janeiro",RN:"Rio Grande do Norte",RS:"Rio Grande do Sul",RO:"Rondônia",RR:"Roraima",SC:"Santa Catarina",SP:"São Paulo",SE:"Sergipe",TO:"Tocantins"};
+const UFS = Object.keys(UFN).sort();
+const POR_PAG = 50, MAX_ABAS = 10;
+const lerLS = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
+const gravarLS = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+
+if (!window.IMOVEIS) {
+  $("sub").textContent = "Não encontrei os dados dos imóveis (dados/imoveis.js).";
+  return;
+}
+const META = window.IMOVEIS, DATA = META.d, DET = window.DETALHES || {};
+const BYID = new Map();
+const hoje = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })();
+const parseIso = s => { if (!s) return null; const p = s.split("-").map(Number); return new Date(p[0], p[1] - 1, p[2]); };
+const diasAte = iso => { const d = parseIso(iso); return d ? Math.round((d - hoje) / 864e5) : null; };
+const dataBR = iso => iso ? parseIso(iso).toLocaleDateString("pt-BR") : "";
+
+DATA.forEach(r => {
+  if (r.f === "Caixa") {
+    const n = r.id.slice(2);
+    r.u = r.u || "https://venda-imoveis.caixa.gov.br/sistema/detalhe-imovel.asp?hdnimovel=" + n;
+    r.ft = r.ft || "https://venda-imoveis.caixa.gov.br/fotos/F" + n + "21.jpg";
+    r.fin = !!r.fin;
+  }
+  r._dias = diasAte(r.dt);
+  r._busca = norm([r.cid, r.uf, r.bai, r.end, r.c, r.tx, r.m, r.f].join(" "));
+  r._bai = norm(r.bai);
+  if (r.x && r.x.oc) r.oc = r.x.oc;
+  BYID.set(r.id, r);
+});
+const DEST = DATA.filter(r => r.x);
+
+// ===== custo-benefício =====
+// Referência de preço do m²: mercado pesquisado (destaques) ou mediana das avaliações do mesmo tipo na cidade (ou no estado).
+const faixa = a => Math.max(0, Math.min(7, Math.floor(Math.log2(a / 30))));
+const FAIXA_TXT = ["até 60 m²", "60 a 120 m²", "120 a 240 m²", "240 a 480 m²", "480 a 960 m²", "960 a 1.920 m²", "1.920 a 3.840 m²", "mais de 3.840 m²"];
+const REF = (() => {
+  const g = new Map();
+  const add = (k, v) => { let a = g.get(k); if (!a) g.set(k, a = []); a.push(v); };
+  DATA.forEach(r => { if (r.av && r.a && r.a >= 15 && r.av > 10000) { const v = r.av / r.a; if (v > 20 && v < 60000) { const f = faixa(r.a); add(r.uf + "|" + r.cid + "|" + r.t + "|" + f, v); add(r.uf + "|" + r.t + "|" + f, v); } } });
+  const med = a => { const s = a.slice().sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
+  const out = new Map(); g.forEach((a, k) => { if (a.length >= (k.split("|").length === 4 ? 5 : 10)) out.set(k, [med(a), a.length]); });
+  return out;
+})();
+function refM2(r) {
+  if (r.x) return { v: (r.x.mn + r.x.mx) / 2, fonte: "preço de mercado pesquisado em anúncios do bairro", forte: true };
+  const area = r.a; if (!area) return null;
+  const f = faixa(area), ft = FAIXA_TXT[f];
+  let k = REF.get(r.uf + "|" + r.cid + "|" + r.t + "|" + f);
+  if (k) return { v: k[0], fonte: "mediana do R$/m² de avaliação de " + fmt(k[1]) + " imóveis do mesmo tipo e porte (" + ft + ") em " + r.cid };
+  k = REF.get(r.uf + "|" + r.t + "|" + f);
+  if (k) return { v: k[0], fonte: "mediana do R$/m² de avaliação de " + fmt(k[1]) + " imóveis do mesmo tipo e porte (" + ft + ") em " + UFN[r.uf] + " (a cidade tem poucos dados)", uf: true };
+  return null;
+}
+function cb(r, p) {
+  const area = (r.x && r.x.a) || r.a;
+  if (!area || area < 20 || r.dir || r.d >= 85 || (r._dias != null && r._dias < 0) || r.l < 20000) return null;
+  const ref = refM2(r); if (!ref) return null;
+  const custo = custoTotal(r, p), m2 = custo / area, ganho = 1 - m2 / ref.v;
+  let s = Math.max(0, Math.min(75, ganho * 100)); const mot = [];
+  if (r.fin === true || (r.x && (r.x.fn === "banco" || r.x.fn === "direto" || r.x.fn === "judicial"))) { s += 6; mot.push(["aceita financiamento ou parcela", "p-ok"]); }
+  if (r.oc === "Desocupado") { s += 5; mot.push(["desocupado", "p-ok"]); }
+  if (r.oc === "Ocupado") { s -= 8; mot.push(["ocupado", "p-bad"]); }
+  if (ref.forte) { s += r.x.cf === "alta" ? 6 : r.x.cf === "média" ? 2 : -4; mot.push(["mercado pesquisado, confiança " + r.x.cf, "p-info"]); }
+  else if (ref.uf) { s -= 6; mot.push(["referência estadual", "p-warn"]); }
+  if (r.x && r.x.aok === false) { s -= 5; mot.push(["área estimada", "p-warn"]); }
+  s = Math.round(Math.max(0, Math.min(100, s)));
+  if (ganho > 0.6 && !ref.forte) { s = Math.min(s, 45); mot.push(["barato demais: conferir", "p-warn"]); }
+  if (r.x && (r.x.aok === false || r.x.cf === "baixa")) s = Math.min(s, 45);
+  return { s, ganho, ref, custo, m2, area, economia: ref.v * area - custo, mot };
+}
+const nivel = s => s >= 55 ? ["Excelente", "p-ok"] : s >= 40 ? ["Muito boa", "p-ok"] : s >= 25 ? ["Boa", "p-info"] : ["Fraca", "p-n"];
+let TOP = [];
+function calcTop() { const p = premissas(); TOP = []; DATA.forEach(r => { r._cb = cb(r, p); if (r._cb && r._cb.s >= 40) TOP.push(r); }); }
+
+// ===== estado do app =====
+let modo = "todos";            // todos | dest | fav
+let ufSel = "", tiposSel = new Set(), pagina = 0, VIS = [];
+let abas = lerLS("leiloes-abas", []).filter(id => BYID.has(id));
+let atual = "busca";           // busca | dest | fav | <id>
+let favs = new Set(lerLS("leiloes-favs", []).filter(id => BYID.has(id)));
+const salvarAbas = () => gravarLS("leiloes-abas", abas);
+const salvarFavs = () => gravarLS("leiloes-favs", [...favs]);
+
+// ===== cabeçalho =====
+const fontesCount = {};
+DATA.forEach(r => fontesCount[r.f] = (fontesCount[r.f] || 0) + 1);
+const dColeta = parseIso(META.atualizado);
+$("sub").innerHTML = "<b>" + fmt(DATA.length) + " imóveis</b> em leilão, licitação ou venda direta em " +
+  new Set(DATA.map(r => r.uf)).size + " estados e " + fmt(new Set(DATA.map(r => r.uf + r.cid)).size) + " cidades. Coleta de " +
+  dColeta.toLocaleDateString("pt-BR") + ". " + Object.entries(fontesCount).sort((a, b) => b[1] - a[1]).map(([f, n]) => esc(META.fontes[f] || f) + ": " + fmt(n)).join(" · ") + ".";
+if (window.STATUS) {
+  const S = window.STATUS, g = S.gerado ? new Date(S.gerado) : null;
+  const fts = (S.fontes || []).map(f => {
+    const atual = f.data === META.atualizado;
+    return '<span class="pill ' + (atual ? "p-ok" : "p-warn") + '" title="' + esc(f.msg || "") + '">' + esc(f.nome) + (atual ? " ✓" : " · dados de " + esc(dataBR(f.data))) + "</span>";
+  }).join(" ");
+  $("sub").insertAdjacentHTML("afterend", '<p class="sub st-line">Atualização automática diária' + (g ? ", a última em " + g.toLocaleDateString("pt-BR") + " às " + g.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "") + ". " + fts + "</p>");
+}
+const idade = Math.round((hoje - dColeta) / 864e5);
+const vencidos = DATA.filter(r => r._dias != null && r._dias < 0).length;
+if (idade > 10 || vencidos > DATA.length * 0.25) {
+  $("stale").hidden = false;
+  $("stale").innerHTML = "<b>Dados envelhecendo.</b> A coleta é de " + dColeta.toLocaleDateString("pt-BR") + " (há " + idade + " dias) e " + fmt(vencidos) +
+    " lotes já passaram da data. Refaça a coleta antes de usar estes números.";
+}
+
+// ===== utilidades de exibição =====
+const dClass = d => d == null ? "d-lo" : d < 0 ? "d-neg" : d >= 45 ? "d-hi" : d >= 25 ? "d-mid" : "d-lo";
+const dTxt = d => d == null ? "—" : d < 0 ? "+" + Math.abs(Math.round(d)) + "%" : Math.round(d) + "%";
+const FIN = { banco: ["Financiamento bancário", "p-ok"], direto: ["Parcelamento do vendedor", "p-info"], judicial: ["Parcelamento judicial", "p-warn"], avista: ["Somente à vista", "p-n"] };
+function tituloDe(r) {
+  return (r.tx || r.t) + (r.a ? " · " + num1(r.a) + " m²" : "") + (r.q ? " · " + r.q + " qto" + (r.q > 1 ? "s" : "") : "");
+}
+function prazoPill(r) {
+  if (r._dias == null) return '<span class="pill p-info">sem data</span>';
+  const n = r._dias, cls = n < 0 ? "p-n" : n <= 1 ? "p-bad" : n <= 3 ? "p-warn" : "p-ok";
+  const t = n < 0 ? "encerrado" : n === 0 ? "encerra hoje" : n === 1 ? "amanhã" : "faltam " + n + " dias";
+  return '<span class="pill ' + cls + '">' + t + "</span>";
+}
+function prazo(r) {
+  return prazoPill(r) + (r._dias == null ? '<div class="t3">venda direta ou proposta</div>' : '<div class="t3">' + dataBR(r.dt) + (r.pr && r.pr !== "Única" ? " · " + r.pr + " praça" : "") + "</div>");
+}
+function imgTag(src, cls) {
+  return src ? '<img class="' + cls + '" src="' + esc(src) + '" loading="lazy" alt="" onerror="this.outerHTML=\'<div class=&quot;' + (cls === "foto" ? "foto-vazia" : "no-photo") + '&quot;>sem foto</div>\'">' : '<div class="' + (cls === "foto" ? "foto-vazia" : "no-photo") + '">sem foto</div>';
+}
+
+// ===== custos =====
+function premissas() {
+  const v = (id, d) => { const x = parseFloat($(id).value); return isNaN(x) ? d : x; };
+  return { com: v("p-com", 5) / 100, itbi: v("p-itbi", 3) / 100, reg: v("p-reg", 1.5) / 100, desoc: v("p-desoc", 20000), ref: v("p-ref", 0) };
+}
+function custoTotal(r, p, lance) {
+  const area = (r.x && r.x.a) || r.a;
+  return (lance || r.l) * (1 + p.com + p.itbi + p.reg) + (r.oc === "Ocupado" ? p.desoc : 0) + (area ? p.ref * area : 0);
+}
+function calc(r, p) {
+  if (!r.x) return {};
+  const area = r.x.a || r.a, custo = custoTotal(r, p);
+  const m2c = area ? custo / area : null, mid = (r.x.mn + r.x.mx) / 2;
+  return { custo, m2c, efet: m2c && mid ? Math.round((1 - m2c / mid) * 100) : null, area, mid };
+}
+
+// ===== filtros =====
+function opts(sel, vals, todos) {
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">' + todos + "</option>" + vals.map(([v, n]) => '<option value="' + esc(v) + '">' + esc(v) + " (" + fmt(n) + ")</option>").join("");
+  if (vals.some(([v]) => v === cur)) sel.value = cur;
+}
+const contar = (arr, fn) => { const m = new Map(); arr.forEach(r => { const k = fn(r); if (k) m.set(k, (m.get(k) || 0) + 1); }); return [...m.entries()].sort((a, b) => b[1] - a[1]); };
+function base() { return modo === "top" ? TOP : modo === "dest" ? DEST : modo === "fav" ? DATA.filter(r => favs.has(r.id)) : DATA; }
+function opcoesBase() {
+  const b = base();
+  opts($("f-fonte"), contar(b, r => META.fontes[r.f] || r.f), "todas as origens");
+  opts($("f-com"), contar(b, r => r.c), "todos");
+  opts($("f-mod"), contar(b, r => r.m), "todas");
+  $("f-tipo").innerHTML = contar(b, r => r.t).map(([t, n]) => '<button type="button" class="chip" aria-pressed="' + tiposSel.has(t) + '" data-t="' + esc(t) + '">' + esc(t) + ' <span class="c">' + fmt(n) + "</span></button>").join("");
+}
+$("f-tipo").addEventListener("click", e => {
+  const b = e.target.closest(".chip"); if (!b) return;
+  const t = b.dataset.t; if (tiposSel.has(t)) tiposSel.delete(t); else tiposSel.add(t);
+  b.setAttribute("aria-pressed", tiposSel.has(t)); pagina = 0; render();
+});
+function preencherCidades() {
+  const sel = $("f-cid");
+  if (!ufSel) { sel.innerHTML = '<option value="">Escolha o estado</option>'; sel.disabled = true; $("dl-bai").innerHTML = ""; return; }
+  sel.disabled = false;
+  opts(sel, contar(base().filter(r => r.uf === ufSel), r => r.cid), "todas as cidades de " + UFN[ufSel]);
+  preencherBairros();
+}
+function preencherBairros() {
+  const c = $("f-cid").value;
+  $("dl-bai").innerHTML = ufSel && c ? contar(base().filter(r => r.uf === ufSel && r.cid === c), r => r.bai).slice(0, 300).map(([b]) => '<option value="' + esc(b) + '">').join("") : "";
+}
+function renderUF(rows) {
+  const cnt = {}; rows.forEach(r => cnt[r.uf] = (cnt[r.uf] || 0) + 1);
+  const max = Math.max(1, ...Object.values(cnt));
+  $("ufgrid").innerHTML = UFS.map(uf => {
+    const n = cnt[uf] || 0;
+    return '<button type="button" class="uf" data-uf="' + uf + '" aria-pressed="' + (uf === ufSel) + '"' + (n || uf === ufSel ? "" : " disabled") + ' title="' + UFN[uf] + '"><b>' + uf + "</b><span>" + fmt(n) + '</span><i style="width:' + Math.max(4, Math.round(n / max * 100)) + '%"></i></button>';
+  }).join("");
+}
+$("ufgrid").addEventListener("click", e => {
+  const b = e.target.closest(".uf"); if (!b || b.disabled) return;
+  ufSel = ufSel === b.dataset.uf ? "" : b.dataset.uf; pagina = 0; preencherCidades(); render();
+});
+
+function filtrar(ignorarUF) {
+  const q = norm($("f-q").value.trim()), bai = norm($("f-bai").value.trim()), cid = $("f-cid").value;
+  const fonte = $("f-fonte").value, com = $("f-com").value, mod = $("f-mod").value;
+  const pmin = parseFloat($("f-pmin").value) * 1000, pmax = parseFloat($("f-pmax").value) * 1000;
+  const amin = parseFloat($("f-amin").value), amax = parseFloat($("f-amax").value);
+  const dmin = parseFloat($("f-desc").value), fdt = $("f-dt").value;
+  const fin = $("f-fin").checked, foto = $("f-foto").checked, semDir = $("f-dir").checked;
+  const fonteKey = fonte ? Object.keys(META.fontes).find(k => META.fontes[k] === fonte) || fonte : "";
+  const qs = q ? q.split(/\s+/) : [];
+  return base().filter(r =>
+    (ignorarUF || !ufSel || r.uf === ufSel) && (ignorarUF || !cid || r.cid === cid) &&
+    (!tiposSel.size || tiposSel.has(r.t)) &&
+    (!fonteKey || r.f === fonteKey) && (!com || r.c === com) && (!mod || r.m === mod) &&
+    (isNaN(pmin) || r.l >= pmin) && (isNaN(pmax) || r.l <= pmax) &&
+    (isNaN(amin) || (r.a && r.a >= amin)) && (isNaN(amax) || (r.a && r.a <= amax)) &&
+    (isNaN(dmin) || (r.d != null && r.d >= dmin)) &&
+    (!fdt || (fdt === "sem" ? r._dias == null : (r._dias != null && r._dias <= +fdt))) &&
+    (!fin || r.fin === true || (r.x && (r.x.fn === "banco" || r.x.fn === "direto" || r.x.fn === "judicial"))) &&
+    (!foto || r.ft) && (!semDir || !r.dir) &&
+    (!bai || r._bai.includes(bai)) && (!qs.length || qs.every(w => r._busca.includes(w))));
+}
+function ordenar(rows) {
+  const so = $("sort").value, nn = v => v == null ? -1e9 : v, p = premissas();
+  if (so === "efet") rows.forEach(r => r._c = calc(r, p));
+  return rows.sort((a, b) => {
+    if (so === "preco-asc") return a.l - b.l;
+    if (so === "preco-desc") return b.l - a.l;
+    if (so === "m2-asc") return (a.m2 || 1e12) - (b.m2 || 1e12);
+    if (so === "data") return (a._dias == null ? 1e6 : a._dias) - (b._dias == null ? 1e6 : b._dias);
+    if (so === "cb") return nn(b._cb && b._cb.s) - nn(a._cb && a._cb.s) || nn(b._cb && b._cb.economia) - nn(a._cb && a._cb.economia);
+    if (so === "efet") { const ca = a.x && a.x.aok && a.x.cf !== "baixa" ? 1 : 0, cb = b.x && b.x.aok && b.x.cf !== "baixa" ? 1 : 0; return (cb - ca) || (nn((b._c || {}).efet) - nn((a._c || {}).efet)); }
+    return nn(b.d) - nn(a.d);
+  });
+}
+
+// ===== linhas da tabela =====
+function cabImovel(r) {
+  return '<div class="thumb-wrap">' + imgTag(r.ft, "thumb") + '<div style="min-width:0">' +
+    '<div class="t1">' + (favs.has(r.id) ? '<span class="star" title="Favorito">★</span> ' : "") + esc(tituloDe(r)) + "</div>" +
+    '<div class="t2">' + esc([r.bai, r.cid + "/" + r.uf].filter(Boolean).join(" — ")) + "</div>" +
+    (r.end ? '<div class="t3">' + esc(r.end) + "</div>" : "") +
+    '<div class="pills"><span class="pill p-n">' + esc(r.c) + '</span><span class="pill p-n">' + esc(r.m) + "</span>" +
+    (r.dir ? '<span class="pill p-bad">leilão de direitos</span>' : "") + "</div></div></div>";
+}
+const abrirBtn = r => '<button type="button" class="openbtn" data-open="' + esc(r.id) + '">Ver ficha</button>';
+function rowTodos(r) {
+  const cond = [];
+  if (r.oc === "Desocupado") cond.push('<span class="pill p-ok">desocupado</span>');
+  else if (r.oc === "Ocupado") cond.push('<span class="pill p-bad">ocupado</span>');
+  if (r.fin === true) cond.push('<span class="pill p-ok">aceita financiamento</span>');
+  else if (r.f === "Caixa") cond.push('<span class="pill p-n">sem financiamento</span>');
+  if (r.x) cond.push('<span class="pill p-info">analisado</span>');
+  if (r.d >= 85) cond.push('<span class="pill p-warn">desconto atípico</span>');
+  return '<tr class="row" data-open="' + esc(r.id) + '"><td class="imv">' + cabImovel(r) + "</td>" +
+    '<td class="money"><b>' + brl(r.l) + "</b></td><td class=\"money\">" + brl(r.av) + "</td>" +
+    '<td><span class="disc ' + dClass(r.d) + '">' + dTxt(r.d) + "</span></td>" +
+    '<td class="money">' + (r.m2 ? brl(r.m2) : "—") + "</td>" +
+    '<td><div class="pills">' + (cond.join("") || '<span class="t3">ver ficha</span>') + "</div></td>" +
+    "<td>" + prazo(r) + "</td><td>" + abrirBtn(r) + "</td></tr>";
+}
+function rowDest(r) {
+  const c = r._c || calc(r, premissas()), x = r.x, f = FIN[x.fn] || FIN.avista;
+  const oc = r.oc === "Ocupado" ? "p-bad" : r.oc === "Desocupado" ? "p-ok" : "p-n";
+  return '<tr class="row" data-open="' + esc(r.id) + '"><td class="imv">' + cabImovel(r) + '<div class="nota">' + esc(x.nt) + "</div></td>" +
+    '<td class="money"><b>' + brl(r.l) + '</b><div class="sm strong">custo total ~' + brl(c.custo) + "</div>" + (r.av ? '<div class="sm">aval. ' + brl(r.av) + "</div>" : "") + "</td>" +
+    '<td class="money">R$ ' + fmt(x.mn) + "–" + fmt(x.mx) + '/m²<div class="conf c-' + esc(x.cf) + '">confiança ' + esc(x.cf) + "</div></td>" +
+    '<td><span class="disc ' + dClass(c.efet) + '">' + dTxt(c.efet) + '</span><div class="sm">sobre a avaliação: ' + dTxt(r.d) + "</div></td>" +
+    '<td><div class="pills"><span class="pill ' + oc + '">' + esc(r.oc || "Não informado") + '</span><span class="pill ' + f[1] + '">' + f[0] + "</span></div></td>" +
+    "<td>" + prazo(r) + "</td><td>" + abrirBtn(r) + "</td></tr>";
+}
+function rowTop(r) {
+  const c = r._cb, nv = nivel(c.s);
+  return '<tr class="row" data-open="' + esc(r.id) + '"><td class="imv">' + cabImovel(r) + "</td>" +
+    '<td><div class="disc ' + (c.s >= 40 ? "d-hi" : "d-mid") + '">' + c.s + '</div><span class="pill ' + nv[1] + '">' + nv[0] + "</span></td>" +
+    '<td class="money"><b>' + brl(r.l) + '</b><div class="sm strong">custo total ~' + brl(c.custo) + "</div></td>" +
+    '<td class="money">' + brl(c.m2) + '<div class="sm">referência ' + brl(c.ref.v) + "</div></td>" +
+    '<td class="money"><b class="d-hi">' + brl(c.economia) + '</b><div class="sm">' + Math.round(c.ganho * 100) + "% abaixo da referência</div></td>" +
+    '<td><div class="pills">' + c.mot.map(([t, k]) => '<span class="pill ' + k + '">' + esc(t) + "</span>").join("") + "</div></td>" +
+    "<td>" + prazo(r) + "</td><td>" + abrirBtn(r) + "</td></tr>";
+}
+const HEAD_TOP = "<tr><th>Imóvel</th><th>Nota</th><th>Lance / custo total</th><th>Seu R$/m²</th><th>Economia estimada</th><th>Por que está aqui</th><th>Prazo</th><th></th></tr>";
+const HEAD_TODOS = "<tr><th>Imóvel</th><th>Lance / preço</th><th>Avaliação</th><th>Desconto</th><th>R$/m²</th><th>Condições</th><th>Prazo</th><th></th></tr>";
+const HEAD_DEST = "<tr><th>Imóvel</th><th>Lance / custo total</th><th>Mercado do bairro</th><th>Desconto efetivo</th><th>Situação</th><th>Prazo</th><th></th></tr>";
+
+function cards(rows) {
+  const comD = rows.filter(r => r.d != null);
+  const med = comD.length ? comD.map(r => r.d).sort((a, b) => a - b)[Math.floor(comD.length / 2)] : null;
+  const items = [
+    [fmt(rows.length), "imóveis no filtro"],
+    [fmt(new Set(rows.map(r => r.uf + r.cid)).size), "cidades"],
+    [med == null ? "—" : Math.round(med) + "%", "desconto mediano sobre a avaliação"],
+    [fmt(rows.filter(r => r.d >= 50).length), "com 50% ou mais de desconto"],
+    [fmt(rows.filter(r => r.fin === true || (r.x && r.x.fn === "banco")).length), "aceitam financiamento"],
+    [fmt(rows.filter(r => r._dias != null && r._dias >= 0 && r._dias <= 7).length), "encerram em até 7 dias"]
+  ];
+  if (modo === "top") {
+    const ec = rows.map(r => r._cb.economia).sort((a, b) => a - b);
+    items.splice(2, 2, [fmt(rows.filter(r => r._cb.s >= 55).length), "ofertas excelentes (nota 55+)"], [ec.length ? brl(ec[Math.floor(ec.length / 2)]) : "—", "economia mediana estimada"]);
+  }
+  if (modo === "dest") {
+    const p = premissas(), ef = rows.map(r => calc(r, p).efet).filter(v => v != null);
+    items.splice(2, 2, [ef.length ? Math.max(...ef) + "%" : "—", "maior desconto efetivo"], [fmt(ef.filter(v => v >= 30).length), "30%+ abaixo do mercado já com custos"]);
+  }
+  $("cards").innerHTML = items.map(([n, l]) => '<div class="card"><div class="n">' + n + '</div><div class="l">' + l + "</div></div>").join("");
+}
+
+function render() {
+  renderUF(filtrar(true));
+  const rows = ordenar(filtrar(false));
+  if (modo === "dest") { const p = premissas(); rows.forEach(r => r._c = calc(r, p)); }
+  VIS = rows;
+  const total = rows.length, npag = Math.max(1, Math.ceil(total / POR_PAG));
+  if (pagina >= npag) pagina = npag - 1;
+  const pg = rows.slice(pagina * POR_PAG, pagina * POR_PAG + POR_PAG);
+  $("thead").innerHTML = modo === "top" ? HEAD_TOP : modo === "dest" ? HEAD_DEST : HEAD_TODOS;
+  $("rows").innerHTML = pg.map(modo === "top" ? rowTop : modo === "dest" ? rowDest : rowTodos).join("");
+  $("empty").hidden = total > 0;
+  $("empty").textContent = modo === "fav" && !favs.size ? "Você ainda não favoritou nenhum imóvel. Abra a ficha de um imóvel e toque em ☆ Favoritar." : "Nenhum imóvel com esses filtros. Tente afrouxar o preço, o desconto ou o tipo.";
+  $("res-info").innerHTML = "<b>" + fmt(total) + "</b> imóveis" + (ufSel ? " em " + UFN[ufSel] : " no Brasil") + ($("f-cid").value ? " · " + esc($("f-cid").value) : "") +
+    (total > POR_PAG ? " · mostrando " + fmt(pagina * POR_PAG + 1) + "–" + fmt(Math.min(total, (pagina + 1) * POR_PAG)) : "");
+  $("pageinfo").textContent = "página " + (pagina + 1) + " de " + npag;
+  $("prev").disabled = pagina === 0; $("next").disabled = pagina >= npag - 1;
+  cards(rows);
+  const ativos = [ufSel && UFN[ufSel], $("f-cid").value, tiposSel.size && [...tiposSel].join(", "), $("f-mod").value, $("f-com").value].filter(Boolean);
+  $("filtro-resumo").textContent = ativos.length ? "Ativos: " + ativos.join(" · ") : "";
+}
+$("rows").addEventListener("click", e => {
+  if (e.target.closest("a")) return;
+  const t = e.target.closest("[data-open]"); if (t) abrirImovel(t.dataset.open);
+});
+
+// ===== abas do app =====
+const TITULOS = { jur: "Assistente jurídico", busca: "Busca de imóveis", top: "Melhores ofertas de custo-benefício", dest: "Destaques analisados", fav: "Favoritos" };
+function rotuloAba(r) { return (r.tx || r.t) + " · " + r.cid; }
+function renderAbas() {
+  const fixas = [["busca", "Busca", fmt(DATA.length)], ["top", "Melhores ofertas", fmt(TOP.length)], ["dest", "Destaques", DEST.length], ["fav", "★ Favoritos", favs.size], ["jur", "Assistente jurídico", ""]];
+  $("apptabs").innerHTML = fixas.map(([k, l, n]) => '<button type="button" role="tab" class="atab" data-tab="' + k + '" aria-selected="' + (atual === k) + '"><span class="lbl">' + l + '</span><span class="cnt">' + n + "</span></button>").join("") +
+    abas.map(id => { const r = BYID.get(id); return '<div role="tab" tabindex="0" class="atab imv" data-tab="' + esc(id) + '" aria-selected="' + (atual === id) + '" title="' + esc(tituloDe(r) + " — " + r.cid + "/" + r.uf) + '"><span class="lbl">' + esc(rotuloAba(r)) + '</span><button type="button" class="x" data-close="' + esc(id) + '" aria-label="Fechar aba">×</button></div>'; }).join("");
+  const sel = $("apptabs").querySelector('[aria-selected="true"]'); if (sel) sel.scrollIntoView({ block: "nearest", inline: "nearest" });
+}
+$("apptabs").addEventListener("click", e => {
+  const x = e.target.closest("[data-close]"); if (x) { e.stopPropagation(); fecharAba(x.dataset.close); return; }
+  const t = e.target.closest("[data-tab]"); if (t) irPara(t.dataset.tab);
+});
+$("apptabs").addEventListener("keydown", e => { if (e.key === "Enter") { const t = e.target.closest("[data-tab]"); if (t) irPara(t.dataset.tab); } });
+function irPara(k, semHash) {
+  atual = k;
+  if (k === "busca" || k === "top" || k === "dest" || k === "fav") {
+    const novo = k === "busca" ? "todos" : k;
+    if (novo !== modo) {
+      modo = novo; pagina = 0;
+      if (modo === "top") $("sort").value = "cb";
+      else if (modo === "dest") $("sort").value = "efet";
+      else if ($("sort").value === "efet" || $("sort").value === "cb") $("sort").value = "desc";
+      opcoesBase(); preencherCidades();
+    }
+    $("lista-titulo").textContent = TITULOS[k];
+    $("v-lista").hidden = false; $("v-imovel").hidden = true; $("v-jur").hidden = true;
+    render();
+  } else if (k === "jur") {
+    $("v-lista").hidden = true; $("v-imovel").hidden = true; $("v-jur").hidden = false;
+    if (!$("jur-avulso").classList.contains("jur")) montarJur($("jur-avulso"), null);
+  } else {
+    $("v-lista").hidden = true; $("v-imovel").hidden = false; $("v-jur").hidden = true;
+    renderFicha(BYID.get(k));
+  }
+  renderAbas();
+  if (!semHash) { try { history.replaceState(null, "", k === "busca" ? location.pathname + location.search : "#" + (k === "jur" ? "juridico" : k === "top" ? "ofertas" : k === "dest" ? "destaques" : k === "fav" ? "favoritos" : k)); } catch (e) {} }
+  window.scrollTo({ top: 0 });
+}
+function abrirImovel(id) {
+  if (!BYID.has(id)) return;
+  if (!abas.includes(id)) { abas.push(id); if (abas.length > MAX_ABAS) abas.shift(); salvarAbas(); }
+  irPara(id);
+}
+function fecharAba(id) {
+  const i = abas.indexOf(id); if (i < 0) return;
+  abas.splice(i, 1); salvarAbas();
+  if (atual === id) irPara(abas[i] || abas[i - 1] || (modo === "dest" ? "dest" : modo === "fav" ? "fav" : "busca"));
+  else renderAbas();
+}
+
+// ===== ficha do imóvel =====
+function comoParticipar(r) {
+  const m = norm(r.m);
+  if (r.f === "Caixa" && (m.includes("venda direta") || m.includes("venda online")))
+    return ["Crie (ou entre na) sua conta no site de venda de imóveis da Caixa.", m.includes("online") ? "Na venda online, envie seu lance dentro do prazo; vence a maior proposta igual ou acima do mínimo." : "Na venda direta, a proposta pelo preço mínimo já pode ser aceita; o primeiro que concluir leva.", "Se for usar FGTS ou financiamento, confirme na ficha da Caixa se o imóvel aceita e faça a simulação antes.", "Pague o sinal/boleto no prazo indicado; depois vem o contrato e o registro em cartório."];
+  if (r.f === "Caixa" && m.includes("licita"))
+    return ["Leia o edital da licitação (data, hora e número do item).", "Entregue a proposta no formato e no prazo do edital; vence a maior oferta igual ou acima do mínimo.", "Separe o valor do sinal e dos custos de ITBI e registro."];
+  if (m.includes("judicial") || m.includes("pgfn"))
+    return ["Cadastre-se no site da leiloeira com antecedência (a habilitação pode levar dias).", "Leia o edital e o processo: débitos, ocupação, ônus e se é venda de direitos.", "Dê o lance online no dia da praça; em 2ª praça o lance mínimo costuma ser 50% a 60% da avaliação.", "Parcelamento judicial (art. 895 do CPC) exige proposta por escrito, em geral com 25% de entrada.", "Depois da arrematação: auto de arrematação, carta de arrematação e registro."];
+  return ["Cadastre-se no site da leiloeira com antecedência e envie os documentos.", "Leia o edital: condição do imóvel, ocupação, débitos e forma de pagamento.", "Dê o lance no dia do leilão; leilão de banco muitas vezes é condicional (o banco aprova depois).", "Pague a comissão do leiloeiro e o sinal no prazo; depois escritura e registro."];
+}
+function renderFicha(r) {
+  const p = premissas(), det = DET[r.id] || [];
+  const [ds, ps, at, vg] = det;
+  const x = r.x, c = x ? calc(r, p) : null;
+  const custo = custoTotal(r, p);
+  const area = (x && x.a) || r.a;
+  const fav = favs.has(r.id);
+  const mapa = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent([r.end, r.bai, r.cid, r.uf].filter(Boolean).join(", "));
+  const pracas = (ps || []).map(([lab, d, v]) => {
+    const n = diasAte(d), passou = n != null && n < 0, at2 = d === r.dt;
+    return '<div class="praca' + (passou ? " passou" : "") + (at2 ? " atual" : "") + '"><span class="dot"></span><span>' + esc(lab || "Praça") + (d ? " · " + dataBR(d) : "") + (at2 ? ' <span class="pill p-info">atual</span>' : "") + '</span><span class="val">' + brl(v) + "</span></div>";
+  }).join("");
+  const parecidos = DATA.filter(o => o.id !== r.id && o.uf === r.uf && o.cid === r.cid && o.t === r.t)
+    .sort((a, b) => Math.abs(a.l - r.l) - Math.abs(b.l - r.l)).slice(0, 6);
+  const mercadoIni = x ? Math.round((x.mn + x.mx) / 2) : "";
+  const fin = x ? (FIN[x.fn] || FIN.avista) : r.fin === true ? FIN.banco : r.f === "Caixa" ? ["Sem financiamento", "p-n"] : null;
+  const caract = [
+    ["Tipo", r.tx || r.t],
+    area ? [r.t === "Terreno" ? "Área" : "Área privativa/construída", num1(area) + " m²" + (x && x.aok === false ? " (estimada)" : "")] : null,
+    at ? ["Área do terreno", num1(at) + " m²"] : null,
+    r.q ? ["Quartos", r.q] : null,
+    vg ? ["Vagas", vg] : null,
+    ds && ds !== r.end ? ["Descrição", ds] : null,
+    r.end ? ["Endereço", r.end] : null,
+    ["Bairro / cidade", [r.bai, r.cid + "/" + r.uf].filter(Boolean).join(" — ")]
+  ].filter(Boolean);
+  const condic = [
+    ["Vendedor", r.c], ["Modalidade", r.m], ["Origem dos dados", META.fontes[r.f] || r.f],
+    ["Ocupação", r.oc || "Não informada"],
+    fin ? ["Pagamento", fin[0] + (x && x.fd ? " — " + x.fd : "")] : null,
+    r.dt ? ["Encerra em", dataBR(r.dt) + (r.pr && r.pr !== "Única" ? " (" + r.pr + " praça)" : "")] : ["Prazo", "Venda direta ou proposta, sem data fixa"]
+  ].filter(Boolean);
+  const checks = ["Li o edital inteiro (condições, prazos e penalidades)", "Conferi a matrícula atualizada no cartório", "Verifiquei débitos de IPTU e condomínio e quem paga", "Confirmei a ocupação e o custo de desocupação", "Confirmei que não é venda de direitos (ou aceito o risco)", "Visitei ou vi o imóvel por fora", "Somei comissão, ITBI, registro e reforma ao lance"];
+  const ck = lerLS("leiloes-check-" + r.id, []);
+
+  $("v-imovel").innerHTML =
+    '<div class="crumbs"><button type="button" data-nav="busca">Brasil</button> › <button type="button" data-nav-uf="' + r.uf + '">' + UFN[r.uf] + '</button> › <button type="button" data-nav-cid="' + esc(r.cid) + '" data-uf="' + r.uf + '">' + esc(r.cid) + "</button>" + (r.bai ? " › <span>" + esc(r.bai) + "</span>" : "") + "</div>" +
+    '<div class="ficha-top"><div><h1>' + esc(tituloDe(r)) + '</h1><div class="t2">' + esc([r.bai, r.cid + "/" + r.uf].filter(Boolean).join(" — ")) + "</div>" +
+      '<div class="pills"><span class="pill p-n">' + esc(r.c) + '</span><span class="pill p-n">' + esc(r.m) + "</span>" + prazoPill(r) +
+      (r.oc === "Ocupado" ? '<span class="pill p-bad">ocupado</span>' : r.oc === "Desocupado" ? '<span class="pill p-ok">desocupado</span>' : "") +
+      (x ? '<span class="pill p-info">analisado</span>' : "") + (r.dir ? '<span class="pill p-bad">leilão de direitos</span>' : "") + (r.d >= 85 ? '<span class="pill p-warn">desconto atípico: conferir</span>' : "") + "</div></div>" +
+      '<div class="ficha-acts"><button type="button" class="btn alt fav" id="fav-btn" aria-pressed="' + fav + '">' + (fav ? "★ Favorito" : "☆ Favoritar") + "</button>" +
+      '<a class="btn alt" href="' + esc(mapa) + '" target="_blank" rel="noopener">Ver no mapa ↗</a></div></div>' +
+    '<div class="ficha-grid"><div class="ficha-col">' +
+      imgTag(r.ft, "foto") +
+      '<section class="panel"><div class="panel-h"><h2>Características</h2></div><dl class="kv">' + caract.map(([k, v]) => "<dt>" + esc(k) + "</dt><dd>" + esc(v) + "</dd>").join("") + "</dl></section>" +
+      (r._cb ? '<section class="panel"><div class="panel-h"><h2>Custo-benefício</h2><span class="pill ' + nivel(r._cb.s)[1] + '">' + nivel(r._cb.s)[0] + "</span></div>" +
+        '<div class="metrics"><div class="metric"><div class="v">' + r._cb.s + '<span class="t3"> /100</span></div><div class="k">nota</div></div>' +
+        '<div class="metric"><div class="v d-hi">' + brl(r._cb.economia) + '</div><div class="k">economia estimada</div></div>' +
+        '<div class="metric"><div class="v">' + Math.round(r._cb.ganho * 100) + '%</div><div class="k">abaixo da referência</div></div></div>' +
+        '<div class="pills">' + r._cb.mot.map(([t, k]) => '<span class="pill ' + k + '">' + esc(t) + "</span>").join("") + '</div>' +
+        '<p class="t3" style="margin-bottom:0">Referência: ' + brl(r._cb.ref.v) + "/m², " + esc(r._cb.ref.fonte) + ". Seu custo: " + brl(r._cb.m2) + "/m² já com comissão, ITBI e registro.</p></section>" : "") +
+      (x ? '<section class="panel"><div class="panel-h"><h2>Análise de mercado</h2><span class="conf c-' + esc(x.cf) + '">confiança ' + esc(x.cf) + '</span></div>' +
+        '<div class="metrics"><div class="metric"><div class="v">R$ ' + fmt(x.mn) + "–" + fmt(x.mx) + '</div><div class="k">R$/m² do bairro</div></div>' +
+        '<div class="metric"><div class="v">' + (c.m2c ? brl(c.m2c) : "—") + '</div><div class="k">seu R$/m² com custos</div></div>' +
+        '<div class="metric"><div class="v ' + dClass(c.efet) + '">' + dTxt(c.efet) + '</div><div class="k">desconto efetivo</div></div></div>' +
+        '<p class="nota" style="max-width:none">' + esc(x.nt) + '</p><p class="t3">Fonte do preço de mercado: ' + esc(x.fm) + "</p></section>" : "") +
+      '<section class="panel"><div class="panel-h"><h2>Como participar</h2></div><ol class="steps">' + comoParticipar(r).map(s => "<li>" + esc(s) + "</li>").join("") + "</ol>" +
+        '<p class="aviso-src" style="margin:12px 0 0">O lance, o cadastro e o edital ficam no site de quem vende. ' +
+        '<a href="' + esc(r.u) + '" target="_blank" rel="noopener">Abrir o lote original ↗</a>' + (x && x.ed ? ' · <a href="' + esc(x.ed) + '" target="_blank" rel="noopener">Edital ↗</a>' : "") + "</p></section>" +
+      '<section class="panel"><div class="panel-h"><h2>Assistente jurídico do edital</h2><span class="hint">usa o Claude</span></div><div id="jur-ficha"></div></section>' +
+      '<section class="panel"><div class="panel-h"><h2>Antes de dar o lance</h2><span class="hint">fica salvo neste aparelho</span></div><ul class="checklist" id="checklist">' +
+        checks.map((t, i) => '<li><label><input type="checkbox" data-i="' + i + '"' + (ck.includes(i) ? " checked" : "") + "> " + esc(t) + "</label></li>").join("") + "</ul></section>" +
+    "</div><div class=\"ficha-col\">" +
+      '<section class="panel preco"><div class="t2">' + (r._dias == null ? "Preço" : "Lance mínimo atual") + '</div><div class="big">' + brl(r.l) + "</div>" +
+        '<div class="metrics"><div class="metric"><div class="v">' + brl(r.av) + '</div><div class="k">avaliação</div></div>' +
+        '<div class="metric"><div class="v ' + dClass(r.d) + '">' + dTxt(r.d) + '</div><div class="k">desconto s/ avaliação</div></div>' +
+        '<div class="metric"><div class="v">' + (area ? brl(r.l / area) : "—") + '</div><div class="k">R$/m² do lance</div></div></div>' +
+        (pracas ? '<div class="panel-h" style="margin-top:4px"><h2>Praças</h2></div><div class="timeline">' + pracas + "</div>" : "") + "</section>" +
+      '<section class="panel"><div class="panel-h"><h2>Condições</h2></div><dl class="kv">' + condic.map(([k, v]) => "<dt>" + esc(k) + "</dt><dd>" + esc(v) + "</dd>").join("") + "</dl></section>" +
+      '<section class="panel"><div class="panel-h"><h2>Simulador</h2><span class="hint">premissas da aba Busca</span></div><div class="simul">' +
+        '<label class="fld"><span>Seu lance (R$)</span><input id="s-lance" type="number" step="1000" value="' + Math.round(r.l) + '"></label>' +
+        '<label class="fld"><span>Mercado (R$/m²)</span><input id="s-merc" type="number" step="100" placeholder="pesquise anúncios" value="' + mercadoIni + '"></label></div>' +
+        '<div class="simul-res" id="s-res"></div><p class="t3" style="margin-bottom:0">Custo total = lance + comissão + ITBI + registro' + (r.oc === "Ocupado" ? " + desocupação" : "") + " + reforma. Ajuste as porcentagens em Premissas, na aba Busca.</p></section>" +
+      (parecidos.length ? '<section class="panel"><div class="panel-h"><h2>Parecidos em ' + esc(r.cid) + '</h2></div><div class="parecidos">' + parecidos.map(o =>
+        '<button type="button" class="mini" data-open="' + esc(o.id) + '">' + (o.ft ? '<img src="' + esc(o.ft) + '" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">' : '<span class="np"></span>') +
+        '<div><div class="t1">' + esc(tituloDe(o)) + '</div><div class="t2">' + esc(o.bai || o.cid) + '</div><div class="money"><b>' + brl(o.l) + '</b> <span class="disc ' + dClass(o.d) + '" style="font-size:12px">' + dTxt(o.d) + "</span></div></div></button>").join("") + "</div></section>" : "") +
+    "</div></div>";
+
+  function simular() {
+    const l = parseFloat($("s-lance").value) || r.l, m = parseFloat($("s-merc").value);
+    const ct = custoTotal(r, premissas(), l), m2 = area ? ct / area : null;
+    const ef = m2 && m ? Math.round((1 - m2 / m) * 100) : null, valorMerc = area && m ? area * m : null;
+    $("s-res").innerHTML = '<div class="metric"><div class="v">' + brl(ct) + '</div><div class="k">custo total</div></div>' +
+      '<div class="metric"><div class="v">' + (m2 ? brl(m2) : "—") + '</div><div class="k">seu R$/m²</div></div>' +
+      '<div class="metric"><div class="v">' + (valorMerc ? brl(valorMerc) : "—") + '</div><div class="k">valor de mercado estimado</div></div>' +
+      '<div class="metric"><div class="v ' + dClass(ef) + '">' + (ef == null ? (area ? "informe o mercado" : "sem área") : dTxt(ef)) + '</div><div class="k">abaixo do mercado</div></div>';
+  }
+  montarJur($("jur-ficha"), r);
+  $("s-lance").addEventListener("input", simular); $("s-merc").addEventListener("input", simular); simular();
+  $("fav-btn").addEventListener("click", () => {
+    if (favs.has(r.id)) favs.delete(r.id); else favs.add(r.id);
+    salvarFavs(); const f = favs.has(r.id);
+    $("fav-btn").setAttribute("aria-pressed", f); $("fav-btn").textContent = f ? "★ Favorito" : "☆ Favoritar"; renderAbas();
+  });
+  $("checklist").addEventListener("change", () => gravarLS("leiloes-check-" + r.id, [...$("checklist").querySelectorAll("input:checked")].map(i => +i.dataset.i)));
+}
+$("v-imovel").addEventListener("click", e => {
+  const o = e.target.closest("[data-open]"); if (o) { abrirImovel(o.dataset.open); return; }
+  const nav = e.target.closest("[data-nav],[data-nav-uf],[data-nav-cid]"); if (!nav) return;
+  limparFiltros(true);
+  if (nav.dataset.navUf) ufSel = nav.dataset.navUf;
+  if (nav.dataset.navCid) ufSel = nav.dataset.uf;
+  modo = "todos"; opcoesBase(); preencherCidades();
+  if (nav.dataset.navCid) { $("f-cid").value = nav.dataset.navCid; preencherBairros(); }
+  irPara("busca");
+});
+
+// ===== assistente jurídico de editais =====
+let SAMPLE = null, SAMPLE_OK = null;
+if (window.claude && window.claude.use) window.claude.use("sample").then(s => { SAMPLE = s; SAMPLE_OK = !!s; document.querySelectorAll(".jur").forEach(el => el._atualizar && el._atualizar()); }).catch(() => { SAMPLE_OK = false; });
+else SAMPLE_OK = false;
+const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+let pdfProm = null;
+function carregarPdf() {
+  if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  if (!pdfProm) pdfProm = new Promise((ok, err) => {
+    const add = (src, cb) => { const s = document.createElement("script"); s.src = src; s.onload = cb; s.onerror = () => { pdfProm = null; err(new Error("Não consegui carregar o leitor de PDF.")); }; document.head.appendChild(s); };
+    add(PDFJS + "pdf.worker.min.js", () => add(PDFJS + "pdf.min.js", () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + "pdf.worker.min.js"; ok(window.pdfjsLib); }));
+  });
+  return pdfProm;
+}
+async function lerPdf(file, onProg) {
+  const lib = await carregarPdf();
+  const doc = await lib.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false }).promise;
+  const pages = [];
+  for (let i = 1; i <= doc.numPages; i++) {
+    const pg = await doc.getPage(i), tc = await pg.getTextContent();
+    let t = "", lastY = null;
+    for (const it of tc.items) { const y = it.transform ? Math.round(it.transform[5]) : null; if (lastY !== null && y !== lastY) t += "\n"; t += it.str; lastY = y; }
+    pages.push(t.replace(/[ \t]+/g, " ").replace(/\n\s*\n+/g, "\n").trim());
+    if (onProg) onProg(i, doc.numPages);
+  }
+  return { doc, pages };
+}
+async function pdfParaImagens(doc, max) {
+  const out = [];
+  for (let i = 1; i <= Math.min(doc.numPages, max); i++) {
+    const pg = await doc.getPage(i), vp = pg.getViewport({ scale: 1.6 });
+    const cv = document.createElement("canvas"); cv.width = vp.width; cv.height = vp.height;
+    await pg.render({ canvasContext: cv.getContext("2d"), viewport: vp }).promise;
+    out.push(await new Promise(r => cv.toBlob(r, "image/jpeg", 0.82)));
+  }
+  return out;
+}
+const JUR_REGRAS = `Você é um assistente jurídico especializado em leilões e vendas de imóveis no Brasil (leilão judicial, leilão extrajudicial de alienação fiduciária, venda direta e licitação da Caixa, venda de bancos). Analise o(s) documento(s) abaixo (edital, matrícula ou condições de venda) para quem está pensando em comprar.
+
+Regras:
+- Responda em português do Brasil, com linguagem clara para leigo, mas tecnicamente correta.
+- Use SOMENTE o que está no documento para fatos do lote. Quando algo não constar, escreva "não consta no documento". Nunca invente valores, datas, números de processo ou matrícula.
+- Sempre que possível, cite a cláusula, item ou página de onde tirou a informação (ex.: "item 7.2", "pág. 3").
+- Use seu conhecimento da legislação para explicar consequências: Lei 9.514/1997 (arts. 26, 26-A, 27 — inclusive o direito de preferência do devedor do §2º-B — e art. 30, desocupação/reintegração em 60 dias), Lei 14.711/2023 (Marco das Garantias), CPC arts. 879 a 903 (art. 891 preço vil, art. 892, art. 895 parcelamento, art. 901, art. 903 irretratabilidade e ação autônoma, art. 908 §1º sub-rogação dos créditos no preço), CTN art. 130 parágrafo único (tributos sub-rogados no preço na arrematação judicial), Código Civil art. 1.345 (débito de condomínio acompanha o imóvel), Decreto-Lei 70/1966, e as regras usuais de venda direta/licitação da Caixa. Diga quando a regra do edital transfere ao comprador um ônus que a lei não imporia.
+- Se o documento trouxer vários lotes, foque no lote/imóvel indicado em REFERÊNCIA DO LOTE; se não achar, diga isso e analise as condições gerais.
+- Seja específico sobre quem paga cada custo (comissão, ITBI, registro, IPTU e condomínio atrasados, desocupação, regularização de área) e sobre o que acontece se o comprador desistir ou atrasar.`;
+const JUR_FORMATO = `Responda SOMENTE com um objeto JSON, sem texto fora dele, neste formato (use null ou [] quando não houver):
+{"resumo": "3 a 5 frases com o essencial",
+ "lote_encontrado": true,
+ "identificacao": {"vendedor": "", "leiloeiro": "", "modalidade": "", "base_legal": "", "processo": null, "matricula": null, "cartorio": null},
+ "imovel": {"descricao": "", "area": "", "ocupacao": "", "visitacao": ""},
+ "pracas": [{"nome": "1ª praça", "data": "", "valor_minimo": ""}],
+ "pagamento": {"a_vista": "", "parcelamento": "", "financiamento_fgts": "", "sinal_e_prazos": ""},
+ "custos": [{"item": "Comissão do leiloeiro", "quem_paga": "comprador", "regra": "5% sobre o lance", "fonte": "item 9"}],
+ "debitos": {"iptu": "", "condominio": "", "outros": ""},
+ "onus": ["penhoras, hipotecas, indisponibilidades, ações citadas"],
+ "preferencia": "direito de preferência do devedor/condômino, se houver",
+ "riscos": [{"titulo": "", "gravidade": "alta", "explicacao": "", "fonte": ""}],
+ "prazos": [{"evento": "", "prazo": ""}],
+ "penalidades": ["o que acontece em desistência ou atraso"],
+ "documentos": ["documentos para se habilitar e para pagar"],
+ "perguntas": ["perguntas objetivas para fazer ao leiloeiro antes do lance"],
+ "nota_risco": 0,
+ "parecer": "conclusão em 2 a 4 frases: vale aprofundar ou não, e o que precisa ser confirmado"}
+"gravidade" é "alta", "media" ou "baixa". "nota_risco" vai de 0 (muito seguro) a 10 (muito arriscado).`;
+function contextoImovel(r) {
+  if (!r) return "";
+  return "\nDADOS DO LOTE NO NOSSO APP (podem estar desatualizados; o documento prevalece): " + [tituloDe(r), r.end, r.bai, r.cid + "/" + r.uf, "vendedor " + r.c, "modalidade " + r.m,
+    "lance mínimo " + brl(r.l), r.av ? "avaliação " + brl(r.av) : "", r.dt ? "encerra " + dataBR(r.dt) : "", r.oc ? "ocupação " + r.oc : ""].filter(Boolean).join("; ") + ".";
+}
+function montarTexto(st, ref) {
+  const LIM = 190000;
+  let partes = st.docs.filter(d => d.pages).map(d => ({ nome: d.nome, pages: d.pages }));
+  if (st.colado.trim()) partes.push({ nome: "Texto colado", pages: [st.colado.trim()] });
+  const total = partes.reduce((s, d) => s + d.pages.join("\n").length, 0);
+  let aviso = "";
+  if (total > LIM) {
+    const refs = (ref || "").toLowerCase().split(/[,;]/).map(s => s.trim()).filter(s => s.length >= 3);
+    const chave = /condi[cç][oõ]es gerais|disposi[cç][oõ]es|pagamento|comiss[aã]o|desist|penalidade|ocupa|d[eé]bito|condom[ií]nio|iptu|prefer[eê]ncia/i;
+    partes = partes.map(d => ({ nome: d.nome, pages: d.pages.map((t, i) => {
+      const low = t.toLowerCase(), hit = refs.some(r => low.includes(r)) || (i > 0 && refs.some(r => d.pages[i - 1].toLowerCase().includes(r)));
+      return i < 4 || hit || chave.test(t) ? t : null; }) }));
+    aviso = "Documento grande: enviei as páginas iniciais, as que citam o lote informado e as de condições gerais.";
+  }
+  let txt = partes.map(d => "=== " + d.nome + " ===\n" + d.pages.map((t, i) => t == null ? "" : "[pág. " + (i + 1) + "]\n" + t).filter(Boolean).join("\n\n")).join("\n\n");
+  if (txt.length > LIM) { txt = txt.slice(0, LIM); aviso = "Documento muito grande: enviei só o começo. Informe o número do lote para focar no trecho certo."; }
+  return { txt, aviso };
+}
+function renderParecer(a) {
+  const g = { alta: "p-bad", media: "p-warn", "média": "p-warn", baixa: "p-ok" };
+  const li = arr => (arr || []).filter(Boolean).map(x => "<li>" + esc(x) + "</li>").join("");
+  const kv = obj => obj ? Object.entries(obj).filter(([, v]) => v).map(([k, v]) => "<dt>" + esc(k.replace(/_/g, " ")) + "</dt><dd>" + esc(v) + "</dd>").join("") : "";
+  const nota = Number(a.nota_risco);
+  const nc = isNaN(nota) ? "p-n" : nota >= 7 ? "p-bad" : nota >= 4 ? "p-warn" : "p-ok";
+  let h = '<div class="jur-res">' +
+    '<div class="jur-top"><span class="pill ' + nc + '">risco ' + (isNaN(nota) ? "?" : nota) + '/10</span>' + (a.lote_encontrado === false ? '<span class="pill p-warn">lote não localizado no documento</span>' : "") + "</div>" +
+    '<p class="jur-resumo">' + esc(a.resumo) + "</p>";
+  if (a.riscos && a.riscos.length) h += '<h3>Riscos</h3><ul class="jur-riscos">' + a.riscos.map(r => '<li><span class="pill ' + (g[norm(r.gravidade)] || "p-n") + '">' + esc(r.gravidade || "") + "</span> <b>" + esc(r.titulo) + "</b>. " + esc(r.explicacao) + (r.fonte ? ' <span class="t3">(' + esc(r.fonte) + ")</span>" : "") + "</li>").join("") + "</ul>";
+  if (a.custos && a.custos.length) h += '<h3>Quem paga o quê</h3><div class="tbl-mini"><table><thead><tr><th>Item</th><th>Quem paga</th><th>Regra</th><th>Fonte</th></tr></thead><tbody>' + a.custos.map(c => "<tr><td>" + esc(c.item) + "</td><td>" + esc(c.quem_paga) + "</td><td>" + esc(c.regra) + '</td><td class="t3">' + esc(c.fonte) + "</td></tr>").join("") + "</tbody></table></div>";
+  const dl = [kv(a.identificacao), kv(a.imovel), kv(a.pagamento), kv(a.debitos)].join("");
+  if (dl) h += '<h3>Dados do edital</h3><dl class="kv">' + dl + (a.preferencia ? "<dt>preferência</dt><dd>" + esc(a.preferencia) + "</dd>" : "") + "</dl>";
+  if (a.pracas && a.pracas.length) h += "<h3>Praças</h3><ul>" + a.pracas.map(p => "<li>" + esc([p.nome, p.data, p.valor_minimo].filter(Boolean).join(" · ")) + "</li>").join("") + "</ul>";
+  if (a.prazos && a.prazos.length) h += "<h3>Prazos</h3><ul>" + a.prazos.map(p => "<li><b>" + esc(p.evento) + ":</b> " + esc(p.prazo) + "</li>").join("") + "</ul>";
+  if (a.onus && a.onus.length) h += "<h3>Ônus e processos citados</h3><ul>" + li(a.onus) + "</ul>";
+  if (a.penalidades && a.penalidades.length) h += "<h3>Desistência e atraso</h3><ul>" + li(a.penalidades) + "</ul>";
+  if (a.documentos && a.documentos.length) h += "<h3>Documentos</h3><ul>" + li(a.documentos) + "</ul>";
+  if (a.perguntas && a.perguntas.length) h += "<h3>Pergunte ao leiloeiro</h3><ul>" + li(a.perguntas) + "</ul>";
+  if (a.parecer) h += '<h3>Parecer</h3><p class="jur-parecer">' + esc(a.parecer) + "</p>";
+  return h + '<p class="t3">Análise automática para triagem. Não substitui a leitura do edital completo e a revisão por advogado.</p></div>';
+}
+const ERRO_SAMPLE = c => ({ not_granted: "Você não liberou o acesso ao Claude para este app. Recarregue a página e permita quando ele pedir.", rate_limited: "Muitas análises seguidas ou limite de uso atingido. Espere um pouco e tente de novo.",
+  prompt_too_large: "O documento é grande demais. Informe o número do lote para eu focar no trecho certo.", invalid_json: "A resposta veio fora do formato. Toque em Analisar de novo.", refused: "O Claude não quis analisar esse conteúdo.",
+  session_expired: "Sua sessão expirou. Entre de novo no Claude.", sampling_disabled: "O uso do Claude está desativado nesta conta.", images_unavailable: "Esta visualização não aceita imagens; envie o PDF com texto.", image_rejected: "Imagem não aceita (formato ou tamanho)." }[c] || "Algo falhou na análise. Tente de novo em instantes.");
+
+function montarJur(el, r) {
+  const chave = "leiloes-jur-" + (r ? r.id : "avulso");
+  const salvo = lerLS(chave, null);
+  const st = { docs: [], colado: "", ctl: null, chat: (salvo && salvo.chat) || [], parecer: salvo && salvo.parecer, texto: salvo && salvo.texto || "", quando: salvo && salvo.quando };
+  const refIni = r ? (r.f === "Caixa" ? r.id.slice(2) + ", " : "") + (r.end || "") : "";
+  const links = r ? '<a href="' + esc(r.u) + '" target="_blank" rel="noopener">Abrir o lote no site ↗</a>' + (r.x && r.x.ed ? ' · <a href="' + esc(r.x.ed) + '" target="_blank" rel="noopener">Baixar o edital ↗</a>' : "") : "";
+  el.classList.add("jur");
+  el.innerHTML =
+    '<p class="aviso-src" style="margin-top:0">Baixe o edital (e a matrícula, se houver) no site do leilão e solte aqui. O assistente lê o documento e monta um parecer: riscos, quem paga cada custo, prazos, ônus e o que perguntar ao leiloeiro.' + (links ? "<br>" + links : "") + "</p>" +
+    '<div class="jur-off" hidden></div>' +
+    '<label class="drop" tabindex="0"><input type="file" class="jur-file" accept=".pdf,.txt,image/jpeg,image/png,image/webp" multiple hidden><b>Escolher arquivos</b> ou arrastar para cá<span class="t3">PDF, foto ou texto · edital, matrícula, laudo</span></label>' +
+    '<ul class="jur-docs"></ul>' +
+    '<details class="jur-colar"><summary>Ou colar o texto do edital</summary><textarea class="jur-txt" rows="6" placeholder="Cole aqui o texto do edital ou das condições de venda"></textarea></details>' +
+    '<div class="simul" style="margin-top:10px"><label class="fld" style="grid-column:1/-1"><span>Lote, item ou endereço no edital (para editais com vários imóveis)</span><input class="jur-ref" type="text" value="' + esc(refIni) + '"></label></div>' +
+    '<div class="chips" style="margin-top:10px"><button type="button" class="btn jur-go" disabled>Analisar edital</button><button type="button" class="btn alt jur-stop" hidden>Parar</button><span class="t3 jur-status"></span></div>' +
+    '<div class="jur-out"></div>' +
+    '<div class="jur-chat" hidden><h3>Perguntas sobre o documento</h3><div class="jur-msgs"></div><div class="chips" style="flex-wrap:nowrap"><input class="jur-q" type="text" placeholder="Ex.: quem paga o condomínio atrasado?"><button type="button" class="btn jur-ask">Perguntar</button></div></div>';
+  const q = s => el.querySelector(s);
+  const status = t => { q(".jur-status").textContent = t || ""; };
+  function pronto() { return st.docs.some(d => d.pages || d.imgs) || st.colado.trim().length > 200; }
+  function atualizar() {
+    const off = q(".jur-off");
+    if (SAMPLE_OK === false) { off.hidden = false; off.innerHTML = "O assistente usa o Claude e funciona na versão online do app (aberta pelo link no Claude). No arquivo local ele não tem acesso."; }
+    else off.hidden = true;
+    q(".jur-go").disabled = !pronto() || !SAMPLE || !!st.ctl;
+    q(".jur-docs").innerHTML = st.docs.map((d, i) => '<li><span>' + esc(d.nome) + '</span> <span class="t3">' + esc(d.info || "") + '</span> <button type="button" class="x" data-rm="' + i + '" aria-label="Remover">×</button></li>').join("");
+    if (st.parecer) { q(".jur-out").innerHTML = (st.quando ? '<p class="t3">Análise de ' + esc(st.quando) + "</p>" : "") + renderParecer(st.parecer); }
+    q(".jur-chat").hidden = !st.parecer || !st.texto;
+    q(".jur-msgs").innerHTML = st.chat.map(m => '<div class="msg ' + (m.role === "user" ? "eu" : "ia") + '">' + esc(m.content) + "</div>").join("");
+  }
+  el._atualizar = atualizar;
+  function salvar() { const v = { parecer: st.parecer, quando: st.quando, chat: st.chat.slice(-20), texto: st.texto.length < 400000 ? st.texto : "" }; gravarLS(chave, v); }
+  async function adicionar(files) {
+    for (const f of files) {
+      const d = { nome: f.name, info: "lendo…" }; st.docs.push(d); atualizar();
+      try {
+        if (/\.pdf$/i.test(f.name) || f.type === "application/pdf") {
+          const { doc, pages } = await lerPdf(f, (i, n) => { d.info = "lendo pág. " + i + " de " + n; atualizar(); });
+          const chars = pages.join("").length;
+          if (chars / Math.max(1, pages.length) < 100) {
+            d.info = "PDF escaneado: convertendo páginas em imagem…"; atualizar();
+            const lim = SAMPLE && SAMPLE.limits ? await SAMPLE.limits().catch(() => null) : null;
+            if (lim && lim.images) { d.imgs = await pdfParaImagens(doc, Math.min(lim.images.maxCount, 8)); d.info = pages.length + " pág. (escaneado, " + d.imgs.length + " como imagem)"; }
+            else d.info = "PDF escaneado sem texto: não consigo ler aqui";
+          } else { d.pages = pages; d.info = pages.length + " pág. · " + fmt(chars) + " caracteres"; }
+        } else if (/^image\//.test(f.type)) { d.imgs = [f]; d.info = "imagem"; }
+        else { d.pages = [await f.text()]; d.info = fmt(d.pages[0].length) + " caracteres"; }
+      } catch (e) { d.info = "não consegui ler: " + (e.message || "erro"); }
+      atualizar();
+    }
+  }
+  q(".jur-file").addEventListener("change", e => { adicionar([...e.target.files]); e.target.value = ""; });
+  const drop = q(".drop");
+  drop.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); q(".jur-file").click(); } });
+  drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("on"); });
+  drop.addEventListener("dragleave", () => drop.classList.remove("on"));
+  drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("on"); adicionar([...e.dataTransfer.files]); });
+  q(".jur-docs").addEventListener("click", e => { const b = e.target.closest("[data-rm]"); if (b) { st.docs.splice(+b.dataset.rm, 1); atualizar(); } });
+  q(".jur-txt").addEventListener("input", e => { st.colado = e.target.value; atualizar(); });
+  q(".jur-stop").addEventListener("click", () => st.ctl && st.ctl.abort());
+  q(".jur-go").addEventListener("click", async () => {
+    if (!SAMPLE) return;
+    const ref = q(".jur-ref").value.trim();
+    const { txt, aviso } = montarTexto(st, ref);
+    const imgs = st.docs.flatMap(d => d.imgs || []);
+    const prompt = JUR_REGRAS + "\n\nREFERÊNCIA DO LOTE: " + (ref || "não informada") + contextoImovel(r) + (imgs.length ? "\nHá " + imgs.length + " imagem(ns) anexada(s) com páginas do documento; leia-as também." : "") + "\n\n" + JUR_FORMATO + "\n\nDOCUMENTO(S):\n" + (txt || "(somente imagens)");
+    st.ctl = new AbortController(); q(".jur-stop").hidden = false; atualizar();
+    status((aviso ? aviso + " " : "") + "Analisando… costuma levar de 30 segundos a 2 minutos.");
+    q(".jur-out").innerHTML = '<div class="jur-load">Lendo o edital e montando o parecer…</div>';
+    try {
+      const opts = { signal: st.ctl.signal, modelTier: "complex", cache: false };
+      if (imgs.length) opts.images = imgs.slice(0, 20);
+      const a = await SAMPLE.json(prompt, opts);
+      if (!a || typeof a !== "object") throw { code: "invalid_json" };
+      st.parecer = a; st.texto = txt; st.chat = []; st.quando = new Date().toLocaleString("pt-BR"); salvar(); status("");
+    } catch (e) {
+      q(".jur-out").innerHTML = ""; status(e && e.code === "cancelled" ? "Análise interrompida." : ERRO_SAMPLE(e && e.code));
+    } finally { st.ctl = null; q(".jur-stop").hidden = true; atualizar(); }
+  });
+  async function perguntar() {
+    const pergunta = q(".jur-q").value.trim(); if (!pergunta || !SAMPLE || st.ctl) return;
+    q(".jur-q").value = "";
+    st.chat.push({ role: "user", content: pergunta }); atualizar();
+    const bolha = document.createElement("div"); bolha.className = "msg ia"; bolha.textContent = "Pensando…"; q(".jur-msgs").appendChild(bolha);
+    const base = { role: "user", content: JUR_REGRAS + "\nResponda às perguntas sobre o documento abaixo em texto corrido curto (sem JSON), citando item/página.\n" + contextoImovel(r) + "\n\nPARECER JÁ FEITO:\n" + JSON.stringify(st.parecer).slice(0, 12000) + "\n\nDOCUMENTO(S):\n" + st.texto };
+    st.ctl = new AbortController();
+    try {
+      const { text } = await SAMPLE([base, ...st.chat.slice(-10)], { signal: st.ctl.signal, cache: false, onText: ({ text }) => { bolha.textContent = text; } });
+      st.chat.push({ role: "assistant", content: text }); salvar();
+    } catch (e) { st.chat.pop(); bolha.textContent = e && e.code === "cancelled" ? "Interrompido." : ERRO_SAMPLE(e && e.code); }
+    finally { st.ctl = null; atualizar(); }
+  }
+  q(".jur-ask").addEventListener("click", perguntar);
+  q(".jur-q").addEventListener("keydown", e => { if (e.key === "Enter") perguntar(); });
+  atualizar();
+}
+
+// ===== eventos da busca =====
+let tmr;
+const deb = () => { clearTimeout(tmr); tmr = setTimeout(() => { pagina = 0; render(); }, 180); };
+["f-q", "f-bai", "f-pmin", "f-pmax", "f-amin", "f-amax"].forEach(id => $(id).addEventListener("input", deb));
+["p-com", "p-itbi", "p-reg", "p-desoc", "p-ref"].forEach(id => $(id).addEventListener("input", () => { clearTimeout(tmr); tmr = setTimeout(() => { calcTop(); pagina = 0; if (modo === "top") opcoesBase(); render(); renderAbas(); }, 250); }));
+["f-fonte", "f-com", "f-mod", "f-desc", "f-dt", "f-fin", "f-foto", "f-dir", "sort"].forEach(id => $(id).addEventListener("change", () => { pagina = 0; render(); }));
+$("f-cid").addEventListener("change", () => { $("f-bai").value = ""; preencherBairros(); pagina = 0; render(); });
+$("prev").addEventListener("click", () => { pagina--; render(); window.scrollTo({ top: $("res-info").offsetTop - 70 }); });
+$("next").addEventListener("click", () => { pagina++; render(); window.scrollTo({ top: $("res-info").offsetTop - 70 }); });
+function limparFiltros(silencioso) {
+  ufSel = ""; tiposSel.clear(); pagina = 0;
+  ["f-q", "f-bai", "f-pmin", "f-pmax", "f-amin", "f-amax"].forEach(id => $(id).value = "");
+  ["f-fonte", "f-com", "f-mod", "f-desc", "f-dt"].forEach(id => $(id).value = "");
+  $("f-fin").checked = false; $("f-foto").checked = false; $("f-dir").checked = true;
+  if (!silencioso) { opcoesBase(); preencherCidades(); render(); }
+}
+$("limpar-btn").addEventListener("click", () => limparFiltros(false));
+
+// ===== CSV =====
+let DL = null;
+if (window.claude && window.claude.use) window.claude.use("downloads").then(d => { DL = d; }).catch(() => {});
+$("csv-btn").addEventListener("click", () => {
+  const p = premissas();
+  const cols = ["origem", "vendedor", "modalidade", "tipo", "uf", "cidade", "bairro", "endereco", "area_m2", "quartos", "lance", "avaliacao", "desconto_avaliacao",
+    "rs_m2_lance", "encerra_em", "praca", "ocupacao", "aceita_financiamento", "mercado_m2_min", "mercado_m2_max", "custo_total", "desconto_efetivo", "confianca", "nota", "url"];
+  const cell = v => v == null ? "" : '"' + (typeof v === "number" ? String(Math.round(v * 100) / 100).replace(".", ",") : String(v)).replace(/"/g, '""') + '"';
+  const linhas = [cols.join(";")].concat(VIS.map(r => { const c = calc(r, p); return [META.fontes[r.f] || r.f, r.c, r.m, r.tx || r.t, r.uf, r.cid, r.bai, r.end, r.a, r.q, r.l, r.av, r.d, r.m2,
+    r.dt, r.pr, r.oc, r.fin === true ? "sim" : (r.x ? (FIN[r.x.fn] || [""])[0] : ""), r.x && r.x.mn, r.x && r.x.mx, c.custo, c.efet, r.x && r.x.cf, r.x && r.x.nt, r.u].map(cell).join(";"); }));
+  const blob = new Blob(["﻿" + linhas.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const nome = "leiloes-" + META.atualizado + (ufSel ? "-" + ufSel : "") + ".csv";
+  if (DL) { DL.save({ filename: nome, data: blob }).catch(() => {}); return; }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nome;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+
+// ===== tema =====
+(function () {
+  const btn = $("theme-btn"), nomes = { auto: "Tema: auto", light: "Tema: claro", dark: "Tema: escuro" };
+  let at = lerLS("painel-tema2", "auto");
+  function ap() { if (at === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", at); btn.textContent = nomes[at]; gravarLS("painel-tema2", at); }
+  btn.addEventListener("click", () => { at = at === "auto" ? "light" : at === "light" ? "dark" : "auto"; ap(); });
+  ap();
+})();
+
+// ===== início =====
+calcTop();
+opcoesBase(); preencherCidades();
+function rotaHash() {
+  const h = (location.hash || "").slice(1);
+  if (h === "juridico") irPara("jur", true);
+  else if (h === "ofertas") irPara("top", true);
+  else if (h === "destaques") irPara("dest", true);
+  else if (h === "favoritos") irPara("fav", true);
+  else if (h && BYID.has(h)) { if (!abas.includes(h)) { abas.push(h); if (abas.length > MAX_ABAS) abas.shift(); salvarAbas(); } irPara(h, true); }
+  else irPara("busca", true);
+}
+window.addEventListener("hashchange", rotaHash);
+rotaHash();
+})();
+</script>
+
+</body>
+</html>
